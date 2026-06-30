@@ -1,0 +1,28 @@
+# Terraform provider binaries (too large for GitHub)
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Node
+node_modules/
+.next/
+frontend/.next/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local environment files
+*.env.local
+*.env.*.local
+
+# Storage uploads (local only)
+storage/uploads/*
+!storage/uploads/.gitkeep
