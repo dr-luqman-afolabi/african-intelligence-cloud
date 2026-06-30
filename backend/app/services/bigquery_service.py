@@ -61,3 +61,41 @@ def load_dataframe(dataset_id: str, table_id: str, df: Any) -> None:
     job = client.load_table_from_dataframe(df, table_ref, job_config=job_config)
     job.result()
     logger.info("Loaded DataFrame to BigQuery", extra={"table": table_ref, "rows": len(df)})
+
+
+# AIC canonical schema for the connector_data streaming table
+_CONNECTOR_DATA_SCHEMA = [
+    ("source_id", "STRING"),
+    ("country_iso3", "STRING"),
+    ("indicator_code", "STRING"),
+    ("year", "INTEGER"),
+    ("value", "FLOAT64"),
+    ("unit", "STRING"),
+    ("data_source", "STRING"),
+    ("ingested_at", "TIMESTAMP"),
+]
+
+
+def ensure_connector_data_table(dataset_id: str) -> None:
+    """Create the connector_data table if it does not already exist."""
+    from google.cloud import bigquery
+    client = _get_client()
+    table_ref = f"{client.project}.{dataset_id}.connector_data"
+    try:
+        client.get_table(table_ref)
+        logger.info("BQ table exists: %s", table_ref)
+    except Exception:
+        schema = [
+            bigquery.SchemaField(name, field_type, mode="NULLABLE")
+            for name, field_type in _CONNECTOR_DATA_SCHEMA
+        ]
+        table = bigquery.Table(table_ref, schema=schema)
+        table.time_partitioning = bigquery.TimePartitioning(field="ingested_at")
+        client.create_table(table)
+        logger.info("Created BQ table: %s", table_ref)
+
+
+def setup_aic_dataset(dataset_id: str, location: str = "US") -> None:
+    """One-time setup: create dataset and all AIC tables."""
+    ensure_dataset(dataset_id, location=location)
+    ensure_connector_data_table(dataset_id)

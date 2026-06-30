@@ -10,6 +10,7 @@ from app.routers.indicators import router as indicators_router
 from app.routers.macro_data import router as macro_data_router
 from app.routers.datasets import router as datasets_router
 from app.routers.connectors import router as connectors_router
+from app.routers.catalog import router as catalog_router
 from app.services.worldbank_connector import seed_countries, seed_indicators
 from app.services.connector_service import seed_data_sources
 import app.connectors.tier1  # noqa: F401 — triggers all register_connector() calls
@@ -60,6 +61,7 @@ app.include_router(indicators_router, prefix="/api/v1")
 app.include_router(macro_data_router, prefix="/api/v1")
 app.include_router(datasets_router, prefix="/api/v1")
 app.include_router(connectors_router, prefix="/api/v1")
+app.include_router(catalog_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["Health"])

@@ -79,28 +79,52 @@ def run_sync(db: Session, source_id: str, **kwargs) -> SyncJob:
         connector = get_connector(source_id)
         records = connector.sync(**kwargs)
 
-        from app.services.ingestion_service import ingest_records
+        from app.services.ingestion_service import ingest_records, ingest_to_bigquery
         written = ingest_records(db, source_id, records)
+
+        # Mirror to BigQuery when configured (non-blocking: errors are logged, not raised)
+        bq_errors = ingest_to_bigquery(source_id, records)
+        bq_dest = "bigquery" if not bq_errors else "bigquery_error"
 
         from app.services.quality_service import compute_quality
         compute_quality(db, job.id, source_id, records)
 
-        lineage = DataLineage(
+        # Lineage: postgres leg
+        db.add(DataLineage(
             sync_job_id=job.id,
             source_id=source_id,
             destination="postgres",
             destination_table="macro_data",
             row_count=written,
             pipeline_version="1.0",
-        )
-        db.add(lineage)
+        ))
+
+        # Lineage: BigQuery leg (only when configured)
+        if records:
+            from app.config import get_settings
+            if get_settings().bigquery_dataset:
+                db.add(DataLineage(
+                    sync_job_id=job.id,
+                    source_id=source_id,
+                    destination=bq_dest,
+                    destination_table="connector_data",
+                    row_count=len(records),
+                    pipeline_version="1.0",
+                ))
+
+        # Update catalog entry after successful sync
+        try:
+            from app.services.catalog_service import upsert_catalog_entry
+            upsert_catalog_entry(db, source_id, records)
+        except Exception:
+            logger.debug("Catalog update skipped for %s", source_id)
 
         job.status = "success"
         job.records_fetched = len(records)
         job.records_written = written
         job.finished_at = datetime.now(timezone.utc)
         db.commit()
-        logger.info("Sync complete: source=%s written=%d", source_id, written)
+        logger.info("Sync complete: source=%s written=%d bq_errors=%d", source_id, written, len(bq_errors))
 
     except ConnectorError as exc:
         job.status = "failed"
