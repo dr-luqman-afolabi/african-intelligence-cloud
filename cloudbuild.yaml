@@ -1,0 +1,99 @@
+steps:
+  # ── 1. Run backend tests ───────────────────────────────────────────────────
+  - name: python:3.12-slim
+    id: backend-test
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        cd backend
+        apt-get update -q && apt-get install -y -q libpq-dev gcc
+        pip install -q -r requirements.txt
+        pytest tests/ -q --tb=short
+    env:
+      - DATABASE_URL=sqlite:///./test.db
+      - SECRET_KEY=ci-test-secret-key
+      - GCP_PROJECT_ID=${PROJECT_ID}
+
+  # ── 2. Build backend Docker image ─────────────────────────────────────────
+  - name: gcr.io/cloud-builders/docker
+    id: backend-build
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/backend:${SHORT_SHA}
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/backend:latest
+      - ./backend
+    waitFor: [backend-test]
+
+  # ── 3. Push backend image ─────────────────────────────────────────────────
+  - name: gcr.io/cloud-builders/docker
+    id: backend-push
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/backend
+    waitFor: [backend-build]
+
+  # ── 4. Build frontend Docker image ────────────────────────────────────────
+  - name: gcr.io/cloud-builders/docker
+    id: frontend-build
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/frontend:${SHORT_SHA}
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/frontend:latest
+      - --build-arg
+      - NEXT_PUBLIC_API_URL=${_API_URL}
+      - ./frontend
+    waitFor: [backend-test]
+
+  # ── 5. Push frontend image ────────────────────────────────────────────────
+  - name: gcr.io/cloud-builders/docker
+    id: frontend-push
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/frontend
+    waitFor: [frontend-build]
+
+  # ── 6. Deploy backend to Cloud Run ────────────────────────────────────────
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    id: backend-deploy
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - aic-backend
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/backend:${SHORT_SHA}
+      - --region=${_REGION}
+      - --platform=managed
+      - --quiet
+    waitFor: [backend-push]
+
+  # ── 7. Deploy frontend to Cloud Run ───────────────────────────────────────
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    id: frontend-deploy
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - aic-frontend
+      - --image=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_ARTIFACT_REPO}/frontend:${SHORT_SHA}
+      - --region=${_REGION}
+      - --platform=managed
+      - --quiet
+    waitFor: [frontend-push]
+
+substitutions:
+  _REGION: us-central1
+  _ARTIFACT_REPO: aic-images
+  _API_URL: https://aic-backend-HASH-uc.a.run.app   # updated by Terraform output
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_MEDIUM
+
+timeout: 1800s

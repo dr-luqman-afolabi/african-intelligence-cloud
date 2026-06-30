@@ -1,0 +1,126 @@
+name: CI / CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  REGION: us-central1
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  ARTIFACT_REPO: aic-images
+
+jobs:
+  # ── Lint + test backend ──────────────────────────────────────────────────
+  backend-ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint (ruff)
+        run: ruff check . --output-format=github
+        continue-on-error: true
+
+      - name: Type-check (mypy)
+        run: mypy app/ --ignore-missing-imports
+        continue-on-error: true
+
+      - name: Test
+        env:
+          DATABASE_URL: sqlite:///./test.db
+          SECRET_KEY: ci-secret-key
+        run: pytest tests/ -q --tb=short
+
+  # ── Lint + test frontend ─────────────────────────────────────────────────
+  frontend-ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+
+  # ── Build & push images + deploy to Cloud Run (main branch only) ─────────
+  deploy:
+    needs: [backend-ci, frontend-ci]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      contents: read
+      id-token: write   # Workload Identity Federation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build + push backend
+        run: |
+          IMAGE=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/backend
+          docker build -t $IMAGE:${{ github.sha }} -t $IMAGE:latest ./backend
+          docker push --all-tags $IMAGE
+
+      - name: Build + push frontend
+        run: |
+          IMAGE=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/frontend
+          docker build -t $IMAGE:${{ github.sha }} -t $IMAGE:latest \
+            --build-arg NEXT_PUBLIC_API_URL=${{ vars.API_URL }} ./frontend
+          docker push --all-tags $IMAGE
+
+      - name: Deploy backend to Cloud Run
+        run: |
+          gcloud run deploy aic-backend \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/backend:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --platform managed \
+            --quiet
+
+      - name: Deploy frontend to Cloud Run
+        run: |
+          gcloud run deploy aic-frontend \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/frontend:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --platform managed \
+            --quiet

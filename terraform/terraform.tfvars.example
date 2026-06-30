@@ -1,0 +1,15 @@
+# ── Required (no defaults) ────────────────────────────────────────────────────
+project_id     = "my-gcp-project-id"
+backend_image  = "us-central1-docker.pkg.dev/my-gcp-project-id/aic-images/aic-backend:latest"
+frontend_image = "us-central1-docker.pkg.dev/my-gcp-project-id/aic-images/aic-frontend:latest"
+github_org     = "hyrin"
+
+# ── Optional (with defaults) ──────────────────────────────────────────────────
+region             = "us-central1"
+environment        = "production"
+db_tier            = "db-g1-small"
+db_name            = "aic_db"
+db_user            = "aic_user"
+github_repo        = "african-intelligence-cloud"
+notification_email = "ops@example.com"   # leave empty "" to skip monitoring alerts
+scheduler_timezone = "UTC"               # IANA timezone e.g. Africa/Lagos
