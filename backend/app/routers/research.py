@@ -5,6 +5,7 @@ import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi.responses import Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -24,6 +25,7 @@ from app.services.research_service import (
 from app.connectors.research.openalex import OpenAlexConnector
 from app.connectors.research.crossref import CrossrefConnector
 from app.connectors.research.semantic_scholar import SemanticScholarConnector
+from app.services.export_service import export_bibtex, export_ris, export_csv, export_excel
 
 router = APIRouter(prefix="/research", tags=["Research"])
 
@@ -318,3 +320,58 @@ def variable_recommendation(req: VariableRequest):
         "conceptual_framework": framework,
         "hypotheses": hypotheses,
     }
+
+
+# ---------------------------------------------------------------------------
+# Export
+# ---------------------------------------------------------------------------
+class ExportPaper(BaseModel):
+    title: Optional[str] = None
+    authors: Optional[str] = None
+    year: Optional[int] = None
+    journal: Optional[str] = None
+    doi: Optional[str] = None
+    abstract: Optional[str] = None
+    citation_count: Optional[int] = None
+    is_open_access: Optional[bool] = None
+    topics: Optional[str] = None
+
+
+class ExportRequest(BaseModel):
+    papers: list[ExportPaper]
+    format: str  # bibtex | ris | excel | csv
+
+
+@router.post("/export")
+def export_papers(req: ExportRequest):
+    rows = [p.model_dump() for p in req.papers]
+    fmt = req.format.lower()
+    if fmt == "bibtex":
+        content = export_bibtex(rows).encode("utf-8")
+        return Response(
+            content=content,
+            media_type="text/plain",
+            headers={"Content-Disposition": "attachment; filename=references.bib"},
+        )
+    if fmt == "ris":
+        content = export_ris(rows).encode("utf-8")
+        return Response(
+            content=content,
+            media_type="text/plain",
+            headers={"Content-Disposition": "attachment; filename=references.ris"},
+        )
+    if fmt == "csv":
+        content = export_csv(rows)
+        return Response(
+            content=content,
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=papers.csv"},
+        )
+    if fmt == "excel":
+        content = export_excel(rows)
+        return Response(
+            content=content,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment; filename=papers.xlsx"},
+        )
+    raise HTTPException(status_code=400, detail=f"Unknown format: {req.format}")

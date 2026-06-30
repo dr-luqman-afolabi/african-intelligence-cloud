@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { ragQuery, RAGSource } from "@/lib/api";
 
 interface Message {
@@ -7,6 +8,37 @@ interface Message {
   content: string;
   sources?: RAGSource[];
 }
+
+const FEATURES = [
+  {
+    href: "/research/search",
+    icon: "🔍",
+    title: "Search Papers",
+    desc: "Search OpenAlex, Crossref, and Semantic Scholar for academic papers.",
+    color: "bg-blue-50 border-blue-200",
+  },
+  {
+    href: "/research/literature-review",
+    icon: "📚",
+    title: "Literature Review",
+    desc: "Generate a structured literature matrix with gaps and theory recommendations.",
+    color: "bg-green-50 border-green-200",
+  },
+  {
+    href: "/research/method-advisor",
+    icon: "🧪",
+    title: "Method Advisor",
+    desc: "Get AI recommendations for research methods and statistical software.",
+    color: "bg-purple-50 border-purple-200",
+  },
+  {
+    href: "/research/data-recommendation",
+    icon: "📊",
+    title: "Data & Variables",
+    desc: "Discover African datasets and get variable recommendations for your study.",
+    color: "bg-amber-50 border-amber-200",
+  },
+];
 
 export default function ResearchPage() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -41,23 +73,41 @@ export default function ResearchPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
-      <div className="border-b border-slate-200 bg-white px-6 py-4 flex items-center gap-3">
-        <span className="text-2xl">🔬</span>
+      <div className="border-b border-slate-200 bg-white px-6 py-4">
+        <h1 className="text-lg font-bold text-slate-800">Open Research Intelligence</h1>
+        <p className="text-xs text-slate-500">AI-powered research tools for African studies</p>
+      </div>
+
+      {/* Feature cards */}
+      <div className="px-6 py-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto w-full">
+        {FEATURES.map((f) => (
+          <Link
+            key={f.href}
+            href={f.href}
+            className={`rounded-2xl border p-5 hover:shadow-md transition flex flex-col gap-2 ${f.color}`}
+          >
+            <span className="text-2xl">{f.icon}</span>
+            <span className="text-sm font-semibold text-slate-900">{f.title}</span>
+            <span className="text-xs text-slate-500 leading-relaxed">{f.desc}</span>
+          </Link>
+        ))}
+      </div>
+
+      <div className="border-t border-slate-200 mx-6 mb-2" />
+
+      {/* RAG chat */}
+      <div className="border-b border-slate-100 bg-white px-6 py-3 flex items-center gap-2">
+        <span className="text-base">💬</span>
         <div>
-          <h1 className="text-lg font-bold text-slate-800">AI Research Assistant</h1>
-          <p className="text-xs text-slate-500">
-            Powered by RAG over African economic indicators
-          </p>
+          <p className="text-sm font-semibold text-slate-700">AI Research Assistant</p>
+          <p className="text-xs text-slate-400">Ask about African economic indicators and data</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-4xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 max-w-4xl mx-auto w-full">
         {messages.length === 0 && (
-          <div className="text-center py-16 space-y-3">
-            <div className="text-5xl">💬</div>
-            <p className="text-slate-500 text-sm">
-              Ask anything about African economic data, indicators, or trends.
-            </p>
+          <div className="text-center py-10 space-y-3">
+            <p className="text-slate-500 text-sm">Ask anything about African economic data, indicators, or trends.</p>
             <div className="flex flex-wrap justify-center gap-2 mt-4">
               {[
                 "What is the GDP growth trend in West Africa?",
@@ -88,14 +138,10 @@ export default function ResearchPage() {
               <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
               {msg.sources && msg.sources.length > 0 && (
                 <div className="border-t border-slate-100 pt-2 space-y-1">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                    Sources
-                  </p>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Sources</p>
                   {msg.sources.map((src, j) => (
                     <div key={j} className="text-xs text-slate-500">
-                      <span className="font-medium text-slate-700">{src.title}</span>
-                      {" — "}
-                      {src.excerpt}
+                      <span className="font-medium text-slate-700">{src.title}</span>{" — "}{src.excerpt}
                     </div>
                   ))}
                 </div>

@@ -356,3 +356,190 @@ export async function fetchSDGData(goal: number, country?: string) {
   const { data } = await api.get(`/sdg/data`, { params: { goal, country } });
   return data;
 }
+
+// ── Research types ────────────────────────────────────────────────────────────
+
+export interface ResearchSource {
+  source_id: string;
+  name: string;
+  type: string;
+  api_url: string;
+  license: string;
+  african_relevance_score: number;
+  full_text_allowed: boolean;
+  rate_limit: string;
+  description: string;
+}
+
+export interface PaperResult {
+  external_id: string;
+  title: string;
+  abstract: string | null;
+  doi: string | null;
+  published_year: number | null;
+  journal: string | null;
+  authors: string[];
+  topics: string[];
+  open_access_url: string | null;
+  is_open_access: boolean;
+  citation_count: number;
+  source_id: string;
+}
+
+export interface PaperSearchResponse {
+  query: string;
+  source: string;
+  total: number;
+  results: PaperResult[];
+}
+
+export interface TheoryRecommendation {
+  name: string;
+  description: string;
+  relevance_score: number;
+  african_relevance: number;
+}
+
+export interface MethodRecommendation {
+  method: string;
+  description: string;
+  software: string[];
+  relevance_score: number;
+}
+
+export interface VariableRecommendation {
+  variable: string;
+  recommended_sources: string[];
+  relevance_score: number;
+}
+
+export interface AfricanDataset {
+  name: string;
+  url: string;
+  coverage: string;
+  variables: string;
+  license: string;
+}
+
+export interface LiteratureMatrixRow {
+  title: string;
+  authors: string[];
+  year: number | null;
+  journal: string | null;
+  doi: string | null;
+  is_open_access: boolean;
+  citation_count: number;
+  topics: string[];
+  theories_used: string[];
+  methods_used: string[];
+}
+
+export interface LiteratureReviewResponse {
+  topic: string;
+  total_papers: number;
+  matrix: LiteratureMatrixRow[];
+  research_gaps: string[];
+  recommended_theories: TheoryRecommendation[];
+  recommended_methods: MethodRecommendation[];
+}
+
+export interface ConceptualFramework {
+  title: string;
+  theoretical_foundation: string[];
+  independent_variables: string[];
+  dependent_variable: string;
+  moderating_factors: string[];
+  control_variables: string[];
+  proposed_relationships: string[];
+}
+
+export interface VariableRecommendationResponse {
+  topic: string;
+  recommended_variables: VariableRecommendation[];
+  african_datasets: AfricanDataset[];
+  conceptual_framework: ConceptualFramework;
+  hypotheses: string[];
+}
+
+export interface StoredPaper {
+  id: string;
+  doi: string | null;
+  title: string;
+  abstract: string | null;
+  published_year: number | null;
+  journal: string | null;
+  is_open_access: boolean;
+  open_access_url: string | null;
+  citation_count: number;
+  authors: { full_name: string; affiliation: string | null }[];
+  topics: string[];
+  methods: string[];
+  theories: string[];
+  policy_areas: string[];
+  citations: { doi: string | null; title: string | null; year: number | null }[];
+}
+
+// ── Research API functions ────────────────────────────────────────────────────
+
+export async function fetchResearchSources(): Promise<ResearchSource[]> {
+  const { data } = await api.get<ResearchSource[]>("/research/sources");
+  return data;
+}
+
+export async function searchResearchPapers(params: {
+  q: string;
+  source?: string;
+  max_results?: number;
+  year_from?: number;
+  year_to?: number;
+}): Promise<PaperSearchResponse> {
+  const { data } = await api.get<PaperSearchResponse>("/research/search", { params });
+  return data;
+}
+
+export async function fetchResearchPaper(paperId: string): Promise<StoredPaper> {
+  const { data } = await api.get<StoredPaper>(`/research/paper/${paperId}`);
+  return data;
+}
+
+export async function generateLiteratureReview(req: {
+  topic: string;
+  year_from?: number;
+  year_to?: number;
+  max_results?: number;
+}): Promise<LiteratureReviewResponse> {
+  const { data } = await api.post<LiteratureReviewResponse>("/research/literature-review", req);
+  return data;
+}
+
+export async function recommendResearchTheories(req: {
+  topic: string;
+  context?: string;
+}): Promise<{ topic: string; recommended_theories: TheoryRecommendation[] }> {
+  const { data } = await api.post("/research/theory-recommendation", req);
+  return data;
+}
+
+export async function recommendResearchMethods(req: {
+  topic: string;
+  context?: string;
+}): Promise<{ topic: string; recommended_methods: MethodRecommendation[] }> {
+  const { data } = await api.post("/research/method-recommendation", req);
+  return data;
+}
+
+export async function recommendResearchVariables(req: {
+  topic: string;
+  context?: string;
+}): Promise<VariableRecommendationResponse> {
+  const { data } = await api.post("/research/variable-recommendation", req);
+  return data;
+}
+
+export async function exportResearchPapers(req: {
+  papers: LiteratureMatrixRow[];
+  format: "bibtex" | "ris" | "excel" | "csv";
+}): Promise<Blob> {
+  const { data } = await api.post("/research/export", req, { responseType: "blob" });
+  return data as Blob;
+}
