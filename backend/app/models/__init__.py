@@ -15,3 +15,8 @@ from app.models.survey_round import SurveyRound
 from app.models.sync_schedule import SyncSchedule
 from app.models.sync_watermark import SyncWatermark
 from app.models.dataset_doi import DatasetDOI
+from app.models.research_source import ResearchSource
+from app.models.research_paper import (
+    ResearchPaper, PaperAuthor, PaperTopic, PaperCitation,
+    PaperDataset, PaperMethod, PaperTheory, PaperPolicyArea,
+)
