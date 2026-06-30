@@ -14,6 +14,9 @@ from app.routers.catalog import router as catalog_router
 from app.routers.surveys import router as surveys_router
 from app.routers.schedules import router as schedules_router
 from app.routers.health_sources import router as health_sources_router
+from app.routers.rag import router as rag_router
+from app.routers.search import router as search_router
+from app.routers.sdg import router as sdg_router
 from app.services.worldbank_connector import seed_countries, seed_indicators
 from app.services.connector_service import seed_data_sources
 from app.services.survey_service import seed_surveys
@@ -73,6 +76,9 @@ app.include_router(catalog_router, prefix="/api/v1")
 app.include_router(surveys_router, prefix="/api/v1")
 app.include_router(schedules_router, prefix="/api/v1")
 app.include_router(health_sources_router, prefix="/api/v1")
+app.include_router(rag_router, prefix="/api/v1")
+app.include_router(search_router, prefix="/api/v1")
+app.include_router(sdg_router, prefix="/api/v1")
 
 
 @app.get("/health", tags=["Health"])
