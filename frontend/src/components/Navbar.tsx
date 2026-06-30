@@ -1,6 +1,21 @@
+"use client";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import clsx from "clsx";
+
+const NAV_LINKS = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/datasets", label: "Datasets" },
+  { href: "/connectors", label: "Connectors" },
+  { href: "/health", label: "Health" },
+  { href: "/search", label: "Search" },
+  { href: "/sdg", label: "SDG" },
+  { href: "/research", label: "AI Research" },
+];
 
 export default function Navbar() {
+  const pathname = usePathname();
+
   return (
     <nav className="bg-aic-dark text-white px-6 py-4 flex items-center justify-between shadow">
       <Link href="/" className="flex items-center gap-3 font-bold text-lg tracking-tight">
@@ -12,16 +27,21 @@ export default function Navbar() {
         AIC
       </Link>
 
-      <div className="flex items-center gap-6 text-sm">
-        <Link href="/dashboard" className="text-slate-300 hover:text-white transition">
-          Dashboard
-        </Link>
-        <Link href="/datasets" className="text-slate-300 hover:text-white transition">
-          Datasets
-        </Link>
-        <Link href="/connectors" className="text-slate-300 hover:text-white transition">
-          Connectors
-        </Link>
+      <div className="flex items-center gap-5 text-sm">
+        {NAV_LINKS.map(({ href, label }) => (
+          <Link
+            key={href}
+            href={href}
+            className={clsx(
+              "transition",
+              pathname?.startsWith(href)
+                ? "text-white font-semibold"
+                : "text-slate-300 hover:text-white"
+            )}
+          >
+            {label}
+          </Link>
+        ))}
         <a
           href="http://localhost:8000/docs"
           target="_blank"
@@ -30,8 +50,14 @@ export default function Navbar() {
         >
           API Docs
         </a>
+        <Link
+          href="/login"
+          className="text-slate-300 hover:text-white transition"
+        >
+          Login
+        </Link>
         <span className="px-3 py-1 bg-aic-green text-white text-xs rounded-full font-semibold">
-          Sprint 3
+          Sprint 6
         </span>
       </div>
     </nav>
