@@ -13,3 +13,5 @@ from app.models.catalog_entry import CatalogEntry
 from app.models.survey import Survey
 from app.models.survey_round import SurveyRound
 from app.models.sync_schedule import SyncSchedule
+from app.models.sync_watermark import SyncWatermark
+from app.models.dataset_doi import DatasetDOI
