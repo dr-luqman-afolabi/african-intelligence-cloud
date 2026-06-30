@@ -119,6 +119,14 @@ def run_sync(db: Session, source_id: str, **kwargs) -> SyncJob:
         except Exception:
             logger.debug("Catalog update skipped for %s", source_id)
 
+        # Push metadata to DataHub (non-blocking; skipped when GMS URL not configured)
+        try:
+            from app.services.datahub_service import push_dataset_metadata
+            dh_meta = REGISTRY.get(source_id, {})
+            push_dataset_metadata(source_id, records, source_name=dh_meta.get("source_name", ""))
+        except Exception:
+            logger.debug("DataHub push skipped for %s", source_id)
+
         job.status = "success"
         job.records_fetched = len(records)
         job.records_written = written

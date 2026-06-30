@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     # Secret Manager — when true, SECRET_KEY and DATABASE_URL are loaded from GCP at startup
     use_secret_manager: bool = False
 
+    # DataHub GMS REST endpoint (optional — leave blank to disable DataHub pushes)
+    datahub_gms_url: str = ""
+    datahub_token: str = ""
+
     class Config:
         env_file = ".env"
         case_sensitive = False

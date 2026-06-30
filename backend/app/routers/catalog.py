@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -24,6 +24,30 @@ def get_entry(source_id: str, db: Session = Depends(get_db)):
     if entry is None:
         raise HTTPException(status_code=404, detail=f"No catalog entry for source_id={source_id!r}")
     return _to_dict(entry)
+
+
+@router.post("/{source_id}/push-to-datahub", summary="Push source metadata to DataHub")
+def push_to_datahub(
+    source_id: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    entry = get_catalog_entry(db, source_id)
+    if entry is None:
+        raise HTTPException(status_code=404, detail=f"No catalog entry for source_id={source_id!r}")
+
+    def _push():
+        from app.services.datahub_service import push_dataset_metadata
+        result = push_dataset_metadata(
+            source_id=source_id,
+            records=[],  # catalog entry already aggregated — pass empty; stats come from entry
+            source_name=entry.source_name or source_id,
+        )
+        return result
+
+    background_tasks.add_task(_push)
+    return {"status": "queued", "source_id": source_id,
+            "message": "DataHub push queued as background task"}
 
 
 def _to_dict(e) -> dict:
