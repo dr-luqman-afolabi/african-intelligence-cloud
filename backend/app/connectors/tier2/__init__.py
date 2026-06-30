@@ -1,6 +1,7 @@
 from app.connectors.tier2 import (
     dhs,
     lsms,
+    ipums,
     nisr,
     ubos,
     knbs,
