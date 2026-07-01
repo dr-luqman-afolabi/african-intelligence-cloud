@@ -6,9 +6,11 @@ steps:
     args:
       - -c
       - |
+        set -euo pipefail
         cd backend
         apt-get update -q && apt-get install -y -q libpq-dev gcc
         pip install -q -r requirements.txt
+        export PYTHONPATH=/workspace/backend
         pytest tests/ -q --tb=short
     env:
       - DATABASE_URL=sqlite:///./test.db
