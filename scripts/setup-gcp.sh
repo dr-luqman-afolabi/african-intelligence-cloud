@@ -12,7 +12,7 @@
 set -euo pipefail
 
 PROJECT_ID="${PROJECT_ID:?ERROR: Set PROJECT_ID before running this script}"
-REGION="${REGION:-us-central1}"
+REGION="${REGION:-africa-south1}"
 DB_INSTANCE="${DB_INSTANCE:-aic-postgres}"
 DB_NAME="${DB_NAME:-aic_db}"
 DB_USER="${DB_USER:-aic_user}"
@@ -134,8 +134,12 @@ gsutil mb -p "$PROJECT_ID" -l "$REGION" -b on "gs://${BUCKET_NAME}" 2>/dev/null 
 echo ""
 echo "[7/8] Configuring IAM roles..."
 
-PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
-CLOUDBUILD_SA="${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com"
+CLOUDBUILD_SA="aic-cloudbuild-sa@${PROJECT_ID}.iam.gserviceaccount.com"
+
+echo "  Creating Cloud Build service account 'aic-cloudbuild-sa' (if not exists)..."
+gcloud iam service-accounts create aic-cloudbuild-sa \
+  --display-name="AIC Cloud Build Service Account" \
+  --quiet 2>/dev/null && echo "  Created." || echo "  Already exists — skipped."
 
 echo "  Granting roles to Cloud Build SA ($CLOUDBUILD_SA)..."
 for ROLE in \
