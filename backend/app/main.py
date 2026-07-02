@@ -35,19 +35,23 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=_db.engine, checkfirst=True)
-    db = _db.SessionLocal()
     try:
-        seed_countries(db)
-        seed_indicators(db)
-        seed_data_sources(db)
-        seed_surveys(db)
-        seed_research_sources(db)
-        start_scheduler(db)
-    except Exception:
-        pass
-    finally:
-        db.close()
+        Base.metadata.create_all(bind=_db.engine, checkfirst=True)
+        db = _db.SessionLocal()
+        try:
+            seed_countries(db)
+            seed_indicators(db)
+            seed_data_sources(db)
+            seed_surveys(db)
+            seed_research_sources(db)
+            start_scheduler(db)
+        except Exception:
+            pass
+        finally:
+            db.close()
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Startup DB init failed (non-fatal): {e}")
     yield
     stop_scheduler()
 
