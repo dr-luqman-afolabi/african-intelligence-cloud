@@ -646,3 +646,6 @@ def list_sources(
     if connector_status:
         sources = [s for s in sources if s["connector_status"] == connector_status]
     return sources
+
+# Alias for backward compatibility
+CONNECTOR_REGISTRY = REGISTRY
