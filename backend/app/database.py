@@ -10,12 +10,8 @@ from app.config import get_settings  # noqa: E402 — after Base to break circul
 
 settings = get_settings()
 
-engine = create_engine(
-    settings.database_url,
-    pool_pre_ping=True,
-    pool_size=settings.db_pool_size,
-    max_overflow=settings.db_max_overflow,
-)
+_kw={} if settings.database_url.startswith("sqlite") else {"pool_size":settings.db_pool_size,"max_overflow":settings.db_max_overflow}
+engine=create_engine(settings.database_url,pool_pre_ping=True,**_kw)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
