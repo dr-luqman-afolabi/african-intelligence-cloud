@@ -1,7 +1,6 @@
-import uuid
-from sqlalchemy import Column, Float, Integer, String, ForeignKey, UniqueConstraint, Index, DateTime, Uuid
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Float, Integer, String, DateTime, UniqueConstraint, Index, Uuid, JSON
 from sqlalchemy.sql import func
+import uuid
 from app.database import Base
 
 
@@ -9,18 +8,18 @@ class MacroData(Base):
     __tablename__ = "macro_data"
 
     id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    country_id = Column(Uuid(as_uuid=True), ForeignKey("countries.id"), nullable=False)
-    indicator_id = Column(Uuid(as_uuid=True), ForeignKey("indicators.id"), nullable=False)
+    country_iso3 = Column(String(3), nullable=False, index=True)
+    indicator_code = Column(String(255), nullable=False, index=True)
     year = Column(Integer, nullable=False)
     value = Column(Float, nullable=True)
-    data_source = Column(String(50), nullable=False, default="World Bank")
+    unit = Column(String(100))
+    data_source = Column(String(255))
+    source_id = Column(String(100), index=True)
+    metadata_ = Column("metadata", JSON)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-    country = relationship("Country", back_populates="macro_data")
-    indicator = relationship("Indicator", back_populates="macro_data")
-
     __table_args__ = (
-        UniqueConstraint("country_id", "indicator_id", "year", name="uq_macro_data"),
-        Index("ix_macro_data_lookup", "country_id", "indicator_id", "year"),
+        UniqueConstraint("country_iso3", "indicator_code", "year", name="uq_macro_data"),
+        Index("ix_macro_data_country_indicator_year", "country_iso3", "indicator_code", "year"),
     )

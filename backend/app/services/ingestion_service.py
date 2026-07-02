@@ -52,8 +52,8 @@ def ingest_records(db: Session, source_id: str, records: list[dict]) -> int:
         existing = (
             db.query(MacroData)
             .filter(
-                MacroData.country_id == country.id,
-                MacroData.indicator_id == indicator.id,
+                MacroData.country_iso3 == iso3,
+                MacroData.indicator_code == code,
                 MacroData.year == year,
             )
             .first()
@@ -63,8 +63,8 @@ def ingest_records(db: Session, source_id: str, records: list[dict]) -> int:
             existing.data_source = rec.get("data_source", source_id)
         else:
             db.add(MacroData(
-                country_id=country.id,
-                indicator_id=indicator.id,
+                country_iso3=iso3,
+                indicator_code=code,
                 year=year,
                 value=value,
                 data_source=rec.get("data_source", source_id),

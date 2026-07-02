@@ -118,8 +118,8 @@ def sync_macro_data(db: Session, iso3: str) -> int:
             existing = (
                 db.query(MacroData)
                 .filter(
-                    MacroData.country_id == country.id,
-                    MacroData.indicator_id == indicator.id,
+                    MacroData.country_iso3 == iso3.upper(),
+                    MacroData.indicator_code == indicator.code,
                     MacroData.year == row["year"],
                 )
                 .first()
@@ -128,8 +128,8 @@ def sync_macro_data(db: Session, iso3: str) -> int:
                 existing.value = row["value"]
             else:
                 db.add(MacroData(
-                    country_id=country.id,
-                    indicator_id=indicator.id,
+                    country_iso3=iso3,
+                    indicator_code=indicator.code,
                     year=row["year"],
                     value=row["value"],
                 ))
@@ -147,8 +147,8 @@ def get_macro_data(db: Session, iso3: str) -> dict:
 
     rows = (
         db.query(MacroData, Indicator)
-        .join(Indicator, MacroData.indicator_id == Indicator.id)
-        .filter(MacroData.country_id == country.id)
+        .join(Indicator, MacroData.indicator_code == Indicator.code)
+        .filter(MacroData.country_iso3 == iso3.upper())
         .order_by(MacroData.year.desc())
         .all()
     )
