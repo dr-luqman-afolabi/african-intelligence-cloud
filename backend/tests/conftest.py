@@ -6,15 +6,26 @@ in-memory SQLite database so tests are fully isolated.
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
+from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import sessionmaker
 
-from app.main import app
+import app.database as _db_module
 from app.database import Base, get_db
 from app.models.country import Country
 from app.models.indicator import Indicator
 
-engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+import os as _os
+_test_db_url = _os.environ.get("DATABASE_URL", "sqlite:///:memory:")
+_extra_kw = {"connect_args": {"check_same_thread": False}} if "sqlite" in _test_db_url else {}
+engine = create_engine(_test_db_url, **_extra_kw)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+_db_module.engine = engine
+_db_module.SessionLocal = TestingSessionLocal
+
+from app.main import app  # import AFTER patching engine
+import app.main as _main_module
+_main_module.engine = engine
+_main_module.SessionLocal = TestingSessionLocal
 
 
 def _override_get_db():

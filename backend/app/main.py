@@ -3,7 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.database import Base, engine, SessionLocal
+from app.database import Base, get_db
+import app.database as _db
 from app.routers.auth import router as auth_router
 from app.routers.countries import router as countries_router
 from app.routers.indicators import router as indicators_router
@@ -34,8 +35,8 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine, checkfirst=True)
-    db = SessionLocal()
+    Base.metadata.create_all(bind=_db.engine, checkfirst=True)
+    db = _db.SessionLocal()
     try:
         seed_countries(db)
         seed_indicators(db)

@@ -26,3 +26,4 @@ Thumbs.db
 # Storage uploads (local only)
 storage/uploads/*
 !storage/uploads/.gitkeep
+backend/test.db

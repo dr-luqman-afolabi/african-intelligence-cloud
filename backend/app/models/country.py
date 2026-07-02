@@ -16,5 +16,3 @@ class Country(Base):
     income_group = Column(String(100), nullable=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    macro_data = relationship("MacroData", back_populates="country")

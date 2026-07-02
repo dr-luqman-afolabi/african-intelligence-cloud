@@ -17,5 +17,3 @@ class Indicator(Base):
     source = Column(String(100), nullable=True, default="World Bank")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    macro_data = relationship("MacroData", back_populates="indicator")
