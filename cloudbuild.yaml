@@ -81,7 +81,7 @@ steps:
       - --concurrency=80
       - --set-secrets=DATABASE_URL=aic-database-url:latest,SECRET_KEY=aic-secret-key:latest
       - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},ENV=production,BIGQUERY_DATASET=${_BQ_DATASET},GCS_BUCKET=${PROJECT_ID}-aic-storage
-      - --set-cloudsql-instances=${PROJECT_ID}:${_REGION}:${_DB_INSTANCE}
+      - --set-cloudsql-instances=${PROJECT_ID}:${_SQL_REGION}:${_DB_INSTANCE}
       - --service-account=aic-backend-sa@${PROJECT_ID}.iam.gserviceaccount.com
       - --quiet
     waitFor: [backend-push]
@@ -98,7 +98,7 @@ steps:
           --region=${_REGION} \
           --set-secrets=DATABASE_URL=aic-database-url:latest,SECRET_KEY=aic-secret-key:latest \
           --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},ENV=production \
-          --set-cloudsql-instances=${PROJECT_ID}:${_REGION}:${_DB_INSTANCE} \
+          --set-cloudsql-instances=${PROJECT_ID}:${_SQL_REGION}:${_DB_INSTANCE} \
           --service-account=aic-backend-sa@${PROJECT_ID}.iam.gserviceaccount.com \
           --command=alembic \
           --args=-c,alembic.ini,upgrade,head \
@@ -108,7 +108,7 @@ steps:
           --region=${_REGION} \
           --set-secrets=DATABASE_URL=aic-database-url:latest,SECRET_KEY=aic-secret-key:latest \
           --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},ENV=production \
-          --set-cloudsql-instances=${PROJECT_ID}:${_REGION}:${_DB_INSTANCE} \
+          --set-cloudsql-instances=${PROJECT_ID}:${_SQL_REGION}:${_DB_INSTANCE} \
           --service-account=aic-backend-sa@${PROJECT_ID}.iam.gserviceaccount.com \
           --command=alembic \
           --args=-c,alembic.ini,upgrade,head \
@@ -141,7 +141,8 @@ substitutions:
   _ARTIFACT_REPO: aic-images
   _BACKEND_SERVICE: aic-backend
   _FRONTEND_SERVICE: aic-frontend
-  _DB_INSTANCE: aic-postgres
+  _DB_INSTANCE: aic-production-db
+  _SQL_REGION: us-central1
   _BQ_DATASET: aic_warehouse
   # Update _API_URL after first backend deploy:
   # gcloud run services describe aic-backend --region=africa-south1 --format='value(status.url)'
