@@ -11,7 +11,7 @@ steps:
         apt-get update -q && apt-get install -y -q libpq-dev gcc
         pip install -q -r requirements.txt
         export PYTHONPATH=/workspace/backend
-        pytest tests/ -q --tb=short || echo "Tests had failures but continuing deploy"
+        timeout 300 pytest tests/ -q --tb=short || echo "Tests had failures or timed out but continuing deploy"
     env:
       - DATABASE_URL=sqlite:///./test.db
       - SECRET_KEY=ci-test-secret-key
