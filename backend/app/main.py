@@ -34,6 +34,25 @@ from app.middleware.monitoring_middleware import MonitoringMiddleware, get_metri
 settings = get_settings()
 
 
+def _bootstrap_macro_data_sync(db):
+    """One-time bootstrap: populate macro_data from World Bank if it is empty.
+
+    World Bank is a live, public, no-auth-required source (license A) that
+    already covers poverty, GDP, inflation and other core indicators for
+    every seeded country. This lets dashboards and the AI/RAG analysis have
+    real data to work with without requiring a user to log in and trigger
+    a sync manually.
+    """
+    from app.models.macro_data import MacroData
+    from app.services.connector_service import run_sync
+    try:
+        has_data = db.query(MacroData).first() is not None
+        if not has_data:
+            run_sync(db, "world_bank")
+    except Exception:
+        import logging
+        logging.getLogger(__name__).warning("Bootstrap macro_data sync failed (non-fatal)", exc_info=True)
+
 def _run_startup_tasks():
     try:
         Base.metadata.create_all(bind=_db.engine, checkfirst=True)
@@ -44,6 +63,7 @@ def _run_startup_tasks():
             seed_data_sources(db)
             seed_surveys(db)
             seed_research_sources(db)
+            _bootstrap_macro_data_sync(db)
             start_scheduler(db)
         except Exception:
             pass
