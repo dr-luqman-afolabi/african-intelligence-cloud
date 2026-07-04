@@ -72,8 +72,9 @@ def all_sources_health(
 
     results = []
     for source_id in page_ids:
-        connector = get_connector(source_id)
-        if connector is None:
+        try:
+            connector = get_connector(source_id)
+        except KeyError:
             results.append({"source_id": source_id, "healthy": None, "message": "no connector"})
             continue
 
