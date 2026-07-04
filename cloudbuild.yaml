@@ -80,7 +80,7 @@ steps:
       - --max-instances=10
       - --concurrency=80
       - --set-secrets=DATABASE_URL=aic-database-url:latest,SECRET_KEY=aic-secret-key:latest
-      - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},ENV=production,BIGQUERY_DATASET=${_BQ_DATASET},GCS_BUCKET=${PROJECT_ID}-aic-storage
+      - --set-env-vars=GCP_PROJECT_ID=${PROJECT_ID},ENV=production,BIGQUERY_DATASET=${_BQ_DATASET},GCS_BUCKET=${PROJECT_ID}-aic-storage,ALLOWED_ORIGINS=https://aic-frontend-87872864140.africa-south1.run.app
       - --set-cloudsql-instances=${PROJECT_ID}:${_SQL_REGION}:${_DB_INSTANCE}
       - --service-account=aic-backend-sa@${PROJECT_ID}.iam.gserviceaccount.com
       - --quiet
