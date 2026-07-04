@@ -146,7 +146,7 @@ substitutions:
   _BQ_DATASET: aic_warehouse
   # Update _API_URL after first backend deploy:
   # gcloud run services describe aic-backend --region=africa-south1 --format='value(status.url)'
-  _API_URL: https://aic-backend-PLACEHOLDER-uc.a.run.app
+  _API_URL: https://aic-backend-87872864140.africa-south1.run.app
 
 options:
   logging: CLOUD_LOGGING_ONLY
