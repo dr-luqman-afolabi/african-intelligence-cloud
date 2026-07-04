@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -24,17 +25,16 @@ from app.services.survey_service import seed_surveys
 from app.services.scheduler_service import start_scheduler, stop_scheduler
 from app.services.research_source_service import seed_research_sources
 from app.routers.research import router as research_router
-import app.connectors.tier1  # noqa: F401 — triggers all register_connector() calls
-import app.connectors.tier2  # noqa: F401 — triggers all tier2 register_connector() calls
-import app.connectors.tier3  # noqa: F401 — triggers all tier3 register_connector() calls
+import app.connectors.tier1 # noqa: F401 — triggers all register_connector() calls
+import app.connectors.tier2 # noqa: F401 — triggers all tier2 register_connector() calls
+import app.connectors.tier3 # noqa: F401 — triggers all tier3 register_connector() calls
 from app.middleware.logging_middleware import RequestLoggingMiddleware
 from app.middleware.monitoring_middleware import MonitoringMiddleware, get_metrics
 
 settings = get_settings()
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+def _run_startup_tasks():
     try:
         Base.metadata.create_all(bind=_db.engine, checkfirst=True)
         db = _db.SessionLocal()
@@ -52,9 +52,17 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         import logging
         logging.getLogger(__name__).warning(f"Startup DB init failed (non-fatal): {e}")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Run DB init/seeding + scheduler start in a background thread so the app
+    # can start accepting requests (and pass Cloud Run health checks) right away,
+    # instead of blocking ~45s on cold start before serving any traffic.
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(None, _run_startup_tasks)
     yield
     stop_scheduler()
-
 
 app = FastAPI(
     title="African Intelligence Cloud API",
@@ -89,11 +97,9 @@ app.include_router(search_router, prefix="/api/v1")
 app.include_router(sdg_router, prefix="/api/v1")
 app.include_router(research_router, prefix="/api/v1")
 
-
 @app.get("/health", tags=["Health"])
 def health():
     return {"status": "ok", "version": settings.app_version, "service": settings.app_name}
-
 
 @app.get("/metrics", tags=["Ops"])
 def metrics():
