@@ -71,30 +71,30 @@ def all_sources_health(
     # Pull watermark data once for metadata augmentation
     watermarks = {wm.source_id: wm for wm in list_watermarks(db)}
 
-def _check_one(source_id: str) -> dict:
-    try:
-        connector = get_connector(source_id)
-    except KeyError:
-        return {"source_id": source_id, "healthy": None, "message": "no connector"}
-    try:
-        status = connector.health_check()
-        entry = {
-            "source_id": status.source_id,
-            "healthy": status.healthy,
-            "latency_ms": status.latency_ms,
-            "message": status.message,
-            "checked_at": status.checked_at.isoformat() if status.checked_at else None,
-        }
-    except Exception as exc:
-        entry = {"source_id": source_id, "healthy": False, "message": str(exc)}
-    wm = watermarks.get(source_id)
-    entry["last_synced_at"] = wm.last_synced_at.isoformat() if (wm and wm.last_synced_at) else None
-    entry["records_synced"] = wm.records_synced if wm else None
-    reg = CONNECTOR_REGISTRY.get(source_id, {})
-    entry["source_name"] = reg.get("source_name", source_id)
-    entry["license_category"] = reg.get("license_category")
-    entry["update_frequency"] = reg.get("update_frequency")
-    return entry
+    def _check_one(source_id: str) -> dict:
+        try:
+            connector = get_connector(source_id)
+        except KeyError:
+            return {"source_id": source_id, "healthy": None, "message": "no connector"}
+        try:
+            status = connector.health_check()
+            entry = {
+                "source_id": status.source_id,
+                "healthy": status.healthy,
+                "latency_ms": status.latency_ms,
+                "message": status.message,
+                "checked_at": status.checked_at.isoformat() if status.checked_at else None,
+            }
+        except Exception as exc:
+            entry = {"source_id": source_id, "healthy": False, "message": str(exc)}
+        wm = watermarks.get(source_id)
+        entry["last_synced_at"] = wm.last_synced_at.isoformat() if (wm and wm.last_synced_at) else None
+        entry["records_synced"] = wm.records_synced if wm else None
+        reg = CONNECTOR_REGISTRY.get(source_id, {})
+        entry["source_name"] = reg.get("source_name", source_id)
+        entry["license_category"] = reg.get("license_category")
+        entry["update_frequency"] = reg.get("update_frequency")
+        return entry
     with ThreadPoolExecutor(max_workers=10) as pool:
         checked = list(pool.map(_check_one, page_ids))
     results = [e for e in checked if not (healthy_only and not e.get("healthy"))]
