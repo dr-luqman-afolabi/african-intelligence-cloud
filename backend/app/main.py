@@ -62,8 +62,9 @@ def _run_startup_tasks():
             seed_research_sources(db)
             _bootstrap_macro_data_sync(db)
             start_scheduler(db)
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning("Startup task failed (non-fatal): %s", e, exc_info=True)
         finally:
             db.close()
     except Exception as e:
