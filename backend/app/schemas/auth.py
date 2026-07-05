@@ -25,6 +25,7 @@ class UserProfile(BaseModel):
     full_name: str
     role: UserRole
     is_active: bool
+    is_verified: bool
     organization_id: UUID | None
 
     class Config:
