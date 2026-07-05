@@ -26,7 +26,7 @@ export default function Home() {
             Open Dashboard
           </Link>
           <a
-            href="http://localhost:8000/docs"
+            href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/docs`}
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-3 border-2 border-aic-green text-aic-green font-semibold rounded-lg hover:bg-green-50 transition"
