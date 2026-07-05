@@ -6,6 +6,7 @@ import clsx from "clsx";
 const NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/datasets", label: "Datasets" },
+  { href: "/surveys", label: "Microdata" },
   { href: "/connectors", label: "Connectors" },
   { href: "/health", label: "Health" },
   { href: "/search", label: "Search" },
