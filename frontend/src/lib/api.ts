@@ -59,13 +59,13 @@ export async function fetchMacroData(country: string): Promise<MacroDataResponse
   return data;
 }
 
-export async function fetchCountries() {
-  const { data } = await api.get("/countries");
+export async function fetchCountries(): Promise<CountryEntry[]> {
+  const { data } = await api.get<CountryEntry[]>("/countries");
   return data;
 }
 
-export async function fetchIndicators() {
-  const { data } = await api.get("/indicators");
+export async function fetchIndicators(): Promise<IndicatorEntry[]> {
+  const { data } = await api.get<IndicatorEntry[]>("/indicators");
   return data;
 }
 
@@ -572,21 +572,11 @@ export interface CountryEntry {
     region: string;
 }
 
-export async function fetchCountries(): Promise<CountryEntry[]> {
-    const { data } = await api.get<CountryEntry[]>("/countries");
-    return data;
-}
-
 export interface IndicatorEntry {
     code: string;
     name: string;
     unit: string;
     category: string;
-}
-
-export async function fetchIndicators(): Promise<IndicatorEntry[]> {
-    const { data } = await api.get<IndicatorEntry[]>("/indicators");
-    return data;
 }
 
 export interface MacroInterpretation {
