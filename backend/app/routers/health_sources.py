@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, wait
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
@@ -22,6 +22,10 @@ from app.connectors.registry import CONNECTOR_REGISTRY
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/health/sources", tags=["Health"])
+
+# Hard cap (seconds) on how long the aggregated dashboard endpoint will wait
+# for slow/unreachable external connectors before returning a partial result.
+_AGGREGATE_DEADLINE_SECONDS = 8.0
 
 
 # ---------------------------------------------------------------------------
@@ -63,7 +67,11 @@ def all_sources_health(
     """Return aggregated health status for all registered connectors.
 
     Results are paginated (default 50 per page). Pass healthy_only=true to
-    filter to reachable sources only.
+    filter to reachable sources only. Individual connector checks run
+    concurrently and are bounded by _AGGREGATE_DEADLINE_SECONDS so that a
+    single slow or unreachable external source can never stall the whole
+    dashboard response — any check still running when the deadline hits is
+    reported as timed out instead of blocking the request.
     """
     all_ids = sorted(CONNECTOR_REGISTRY.keys())
     page_ids = all_ids[skip : skip + limit]
@@ -95,8 +103,30 @@ def all_sources_health(
         entry["license_category"] = reg.get("license_category")
         entry["update_frequency"] = reg.get("update_frequency")
         return entry
-    with ThreadPoolExecutor(max_workers=10) as pool:
-        checked = list(pool.map(_check_one, page_ids))
+
+    pool = ThreadPoolExecutor(max_workers=min(len(page_ids), 20) or 1)
+    futures = {pool.submit(_check_one, sid): sid for sid in page_ids}
+    done, not_done = wait(futures.keys(), timeout=_AGGREGATE_DEADLINE_SECONDS)
+
+    checked = []
+    for future in done:
+        source_id = futures[future]
+        try:
+            checked.append(future.result())
+        except Exception as exc:
+            checked.append({"source_id": source_id, "healthy": False, "message": str(exc)})
+    for future in not_done:
+        source_id = futures[future]
+        checked.append({
+            "source_id": source_id,
+            "healthy": False,
+            "message": "health check timed out",
+        })
+    # Don't block the response on straggling background threads; let them
+    # finish (or fail) on their own and be garbage collected afterwards.
+    pool.shutdown(wait=False)
+
+    checked.sort(key=lambda e: e.get("source_id") or "")
     results = [e for e in checked if not (healthy_only and not e.get("healthy"))]
 
     healthy_count = sum(1 for r in results if r.get("healthy"))
