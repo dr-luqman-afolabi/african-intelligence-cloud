@@ -543,3 +543,23 @@ export async function exportResearchPapers(req: {
   const { data } = await api.post("/research/export", req, { responseType: "blob" });
   return data as Blob;
 }
+
+export interface SurveyEntry {
+  survey_id: string;
+  title: string;
+  series: string;
+  source_id: string;
+  country_iso3: string | null;
+  primary_topic: string;
+  requires_approval: boolean;
+  redistribution_allowed: boolean;
+  microdata_available: boolean;
+  access_url: string | null;
+  documentation_url: string | null;
+  tags: string[];
+}
+
+export async function fetchSurveys(): Promise<SurveyEntry[]> {
+  const { data } = await api.get<SurveyEntry[]>("/surveys");
+  return data;
+}
