@@ -21,7 +21,7 @@ SDG_GOALS = [
         "goal_number": 2,
         "title": "Zero Hunger",
         "description": "End hunger, achieve food security and improved nutrition",
-        "keywords": ["food", "hunger", "nutrition", "agriculture", "malnutrition"],
+        "keywords": ["food", "hunger", "nutrition", "agriculture", "malnutrition", "yield", "crop", "cereal"],
     },
     {
         "goal_number": 3,
@@ -87,7 +87,7 @@ SDG_GOALS = [
         "goal_number": 13,
         "title": "Climate Action",
         "description": "Take urgent action to combat climate change and its impacts",
-        "keywords": ["climate", "emissions", "co2", "carbon", "temperature", "greenhouse"],
+        "keywords": ["climate", "emissions", "co2", "carbon", "temperature", "greenhouse", "rainfall", "precipitation"],
     },
     {
         "goal_number": 14,
@@ -171,7 +171,7 @@ def get_sdg_data(goal: int, country: Optional[str], db: Session) -> dict:
     if not goal_meta:
         return {"goal": goal, "series": []}
 
-    indicators = _match_indicators(goal_meta["keywords"], db, limit=8)
+    indicators = _match_indicators(goal_meta["keywords"], db, limit=10)
     indicator_codes = [i["indicator_code"] for i in indicators]
 
     series = []
