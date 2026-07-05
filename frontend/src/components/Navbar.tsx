@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { href: "/search", label: "Search" },
   { href: "/sdg", label: "SDG" },
   { href: "/research", label: "AI Research" },
+  { href: "/about", label: "About" },
 ];
 
 export default function Navbar() {
@@ -52,6 +53,12 @@ export default function Navbar() {
           API Docs
         </a>
         <Link
+            href="/profile"
+            className="text-slate-300 hover:text-white transition"
+          >
+            Profile
+          </Link>
+          <Link
           href="/login"
           className="text-slate-300 hover:text-white transition"
         >
