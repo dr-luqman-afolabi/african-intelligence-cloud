@@ -44,7 +44,7 @@ export default function Navbar() {
           </Link>
         ))}
         <a
-          href="http://localhost:8000/docs"
+          href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/docs`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-slate-300 hover:text-white transition"
