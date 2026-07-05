@@ -262,6 +262,7 @@ export interface AuthUser {
   full_name: string;
   role: string;
   is_active: boolean;
+  is_verified: boolean;
 }
 export interface TokenResponse { access_token: string; token_type: string }
 
@@ -277,6 +278,16 @@ export async function register(req: RegisterRequest): Promise<AuthUser> {
 
 export async function fetchCurrentUser(): Promise<AuthUser> {
   const { data } = await api.get<AuthUser>("/auth/profile");
+  return data;
+}
+
+export async function fetchPendingUsers(): Promise<AuthUser[]> {
+  const { data } = await api.get<AuthUser[]>("/auth/pending");
+  return data;
+}
+
+export async function approveUser(userId: string): Promise<AuthUser> {
+  const { data } = await api.post<AuthUser>(`/auth/approve/${userId}`);
   return data;
 }
 
