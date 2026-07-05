@@ -563,3 +563,42 @@ export async function fetchSurveys(): Promise<SurveyEntry[]> {
   const { data } = await api.get<SurveyEntry[]>("/surveys");
   return data;
 }
+
+
+export interface CountryEntry {
+    iso3: string;
+    iso2: string;
+    name: string;
+    region: string;
+}
+
+export async function fetchCountries(): Promise<CountryEntry[]> {
+    const { data } = await api.get<CountryEntry[]>("/countries");
+    return data;
+}
+
+export interface IndicatorEntry {
+    code: string;
+    name: string;
+    unit: string;
+    category: string;
+}
+
+export async function fetchIndicators(): Promise<IndicatorEntry[]> {
+    const { data } = await api.get<IndicatorEntry[]>("/indicators");
+    return data;
+}
+
+export interface MacroInterpretation {
+    country_iso3: string;
+    country_name: string;
+    indicators: string[];
+    narrative: string;
+}
+
+export async function fetchMacroInterpretation(country: string, indicators: string[]): Promise<MacroInterpretation> {
+    const { data } = await api.get<MacroInterpretation>("/macro-data/interpret", {
+          params: { country, indicators: indicators.join(",") },
+    });
+    return data;
+}
