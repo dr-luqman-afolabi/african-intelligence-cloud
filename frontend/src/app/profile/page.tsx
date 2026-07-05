@@ -89,6 +89,15 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {(user.role === "super_admin" || user.role === "org_admin") && (
+        <a
+          href="/admin/users"
+          className="mt-6 inline-block text-sm font-semibold text-aic-green hover:underline"
+        >
+          Manage pending signups →
+        </a>
+      )}
+
       <button
         onClick={handleLogout}
         className="mt-8 px-6 py-3 bg-white border border-slate-200 text-aic-dark font-semibold rounded-lg hover:bg-slate-50 transition"
