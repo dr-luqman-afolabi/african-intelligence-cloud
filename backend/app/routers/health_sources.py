@@ -27,6 +27,14 @@ router = APIRouter(prefix="/health/sources", tags=["Health"])
 # for slow/unreachable external connectors before returning a partial result.
 _AGGREGATE_DEADLINE_SECONDS = 8.0
 
+# Shared, bounded, module-level pool for connector health checks. Reusing a
+# single pool (instead of creating a fresh ThreadPoolExecutor per request)
+# prevents unbounded thread growth when requests abandon slow/hanging
+# connector checks at the deadline: worker threads are recycled once their
+# current (possibly abandoned) task finishes, rather than piling up one
+# fresh batch of threads per request indefinitely.
+_HEALTH_CHECK_POOL = ThreadPoolExecutor(max_workers=20, thread_name_prefix="health-check")
+
 
 # ---------------------------------------------------------------------------
 # Single-source health
@@ -68,10 +76,11 @@ def all_sources_health(
 
     Results are paginated (default 50 per page). Pass healthy_only=true to
     filter to reachable sources only. Individual connector checks run
-    concurrently and are bounded by _AGGREGATE_DEADLINE_SECONDS so that a
-    single slow or unreachable external source can never stall the whole
-    dashboard response — any check still running when the deadline hits is
-    reported as timed out instead of blocking the request.
+    concurrently on a shared, bounded thread pool and are limited to
+    _AGGREGATE_DEADLINE_SECONDS in total so that a single slow or
+    unreachable external source can never stall the whole dashboard
+    response — any check still running when the deadline hits is reported
+    as timed out instead of blocking the request.
     """
     all_ids = sorted(CONNECTOR_REGISTRY.keys())
     page_ids = all_ids[skip : skip + limit]
@@ -104,8 +113,7 @@ def all_sources_health(
         entry["update_frequency"] = reg.get("update_frequency")
         return entry
 
-    pool = ThreadPoolExecutor(max_workers=min(len(page_ids), 20) or 1)
-    futures = {pool.submit(_check_one, sid): sid for sid in page_ids}
+    futures = {_HEALTH_CHECK_POOL.submit(_check_one, sid): sid for sid in page_ids}
     done, not_done = wait(futures.keys(), timeout=_AGGREGATE_DEADLINE_SECONDS)
 
     checked = []
@@ -122,9 +130,9 @@ def all_sources_health(
             "healthy": False,
             "message": "health check timed out",
         })
-    # Don't block the response on straggling background threads; let them
-    # finish (or fail) on their own and be garbage collected afterwards.
-    pool.shutdown(wait=False)
+        # Don't cancel: the shared pool's worker will simply pick up the next
+        # queued task once this one finishes, so we deliberately avoid
+        # blocking here rather than tearing down any executor.
 
     checked.sort(key=lambda e: e.get("source_id") or "")
     results = [e for e in checked if not (healthy_only and not e.get("healthy"))]
