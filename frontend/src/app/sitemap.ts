@@ -4,6 +4,7 @@ const SITE_URL = "https://aic.hyrin.org";
 
 const ROUTES = [
   "",
+  "/about",
   "/dashboard",
   "/datasets",
   "/surveys",
