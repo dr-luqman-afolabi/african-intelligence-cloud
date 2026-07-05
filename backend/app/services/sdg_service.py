@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Dict, List, Optional
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.indicator import Indicator
@@ -116,51 +117,68 @@ SDG_GOALS = [
 ]
 
 
-def _match_indicators(keywords: List[str], db: Session, limit: int = 5) -> List[dict]:
-    indicators: List[Indicator] = db.query(Indicator).all()
+def _load_indicator_stats(db: Session) -> Dict[str, dict]:
+    """Single aggregate query for latest year + distinct country count per indicator.
+
+    Avoids the previous N+1 pattern (2 extra queries per matched indicator per
+    goal) that made GET /sdg/goals take ~20s once indicator/country/year counts
+    grew after the World Bank expansion.
+    """
+    rows = (
+        db.query(
+            MacroData.indicator_code,
+            func.max(MacroData.year).label("latest_year"),
+            func.count(func.distinct(MacroData.country_iso3)).label("countries"),
+        )
+        .group_by(MacroData.indicator_code)
+        .all()
+    )
+    return {
+        r.indicator_code: {"latest_year": r.latest_year, "countries": r.countries}
+        for r in rows
+    }
+
+
+def _match_indicators(
+    keywords: List[str],
+    indicators: List[Indicator],
+    stats: Dict[str, dict],
+    limit: int = 5,
+) -> List[dict]:
     matched = []
     for ind in indicators:
         doc = f"{ind.name or ''} {ind.description or ''} {ind.category or ''}".lower()
         hits = sum(1 for kw in keywords if kw in doc)
         if hits > 0:
-            years = (
-                db.query(MacroData.year)
-                .filter(MacroData.indicator_code == ind.code)
-                .order_by(MacroData.year.desc())
-                .first()
-            )
-            countries = (
-                db.query(MacroData.country_iso3)
-                .filter(MacroData.indicator_code == ind.code)
-                .distinct()
-                .count()
-            )
+            s = stats.get(ind.code, {})
             matched.append(
                 {
                     "sdg_target": f"SDG {ind.category or 'general'}",
                     "indicator_code": ind.code,
                     "indicator_name": ind.name,
-                    "available_countries": countries,
-                    "latest_year": years[0] if years else None,
+                    "available_countries": s.get("countries", 0),
+                    "latest_year": s.get("latest_year"),
                     "_hits": hits,
                 }
             )
-    matched.sort(key=lambda x: x["_hits"], reverse=True)
+    matched.sort(key=lambda m: m["_hits"], reverse=True)
     for m in matched:
         m.pop("_hits", None)
     return matched[:limit]
 
 
 def get_goals(db: Session) -> List[dict]:
+    indicators: List[Indicator] = db.query(Indicator).all()
+    stats = _load_indicator_stats(db)
     result = []
     for goal in SDG_GOALS:
-        indicators = _match_indicators(goal["keywords"], db)
+        matched = _match_indicators(goal["keywords"], indicators, stats)
         result.append(
             {
                 "goal_number": goal["goal_number"],
                 "title": goal["title"],
                 "description": goal["description"],
-                "indicators": indicators,
+                "indicators": matched,
             }
         )
     return result
@@ -171,8 +189,11 @@ def get_sdg_data(goal: int, country: Optional[str], db: Session) -> dict:
     if not goal_meta:
         return {"goal": goal, "series": []}
 
-    indicators = _match_indicators(goal_meta["keywords"], db, limit=10)
-    indicator_codes = [i["indicator_code"] for i in indicators]
+    indicators: List[Indicator] = db.query(Indicator).all()
+    stats = _load_indicator_stats(db)
+    matched = _match_indicators(goal_meta["keywords"], indicators, stats, limit=10)
+    indicator_codes = [i["indicator_code"] for i in matched]
+    ind_by_code = {i.code: i for i in indicators}
 
     series = []
     for code in indicator_codes:
@@ -182,19 +203,28 @@ def get_sdg_data(goal: int, country: Optional[str], db: Session) -> dict:
         rows = q.order_by(MacroData.year).all()
         if not rows:
             continue
-        ind = db.query(Indicator).filter(Indicator.code == code).first()
+        ind = ind_by_code.get(code)
+        if country:
+            data = [
+                {"country": r.country_iso3, "year": r.year, "value": r.value}
+                for r in rows
+            ]
+        else:
+            by_year: Dict[int, List[float]] = {}
+            for r in rows:
+                by_year.setdefault(r.year, []).append(r.value)
+            data = [
+                {"country": "AFRICA_AVG", "year": y, "value": sum(v) / len(v)}
+                for y, v in sorted(by_year.items())
+            ]
         series.append(
             {
                 "indicator_code": code,
                 "indicator_name": ind.name if ind else code,
                 "unit": ind.unit if ind else "",
-                "data": [
-                    {"country": r.country_iso3, "year": r.year, "value": r.value}
-                    for r in rows
-                ],
+                "data": data,
             }
         )
-
     return {
         "goal": goal,
         "title": goal_meta["title"],
