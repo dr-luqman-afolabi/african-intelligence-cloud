@@ -603,3 +603,96 @@ export async function fetchMacroInterpretation(country: string, indicators: stri
     });
     return data;
 }
+
+
+export interface MicrodataDataset {
+  id: string;
+  project_id: string | null;
+  name: string;
+  original_filename: string;
+  file_type: string;
+  file_size_bytes: number | null;
+  country_iso3: string | null;
+  survey_series: string | null;
+  year: number | null;
+  row_count: number | null;
+  column_count: number | null;
+  missing_cells: number | null;
+  access_status: string;
+  uploaded_by: string;
+  created_at: string;
+}
+
+export interface MicrodataDatasetListResponse {
+  items: MicrodataDataset[];
+  total: number;
+}
+
+export interface MicrodataVariable {
+  id: string;
+  variable_name: string;
+  variable_label: string | null;
+  value_labels: Record<string, unknown> | null;
+  variable_index: number | null;
+  inferred_dtype: string | null;
+  missing_count: number | null;
+}
+
+export interface PovertyAnalysisRequest {
+  dataset_id: string;
+  welfare_variable: string;
+  poverty_line: number;
+  weight_variable?: string;
+  group_by?: string[];
+  geography_variable?: string;
+}
+
+export interface SpatialPovertyAnalysisRequest {
+  dataset_id: string;
+  geo_variable: string;
+  welfare_variable: string;
+  poverty_line: number;
+  weight_variable?: string;
+  geojson_boundary_file?: string;
+}
+
+export interface AnalysisResultResponse {
+  job_id: string;
+  status: string;
+  job_type: string;
+  summary_stats?: Record<string, unknown>;
+  tables?: Record<string, unknown>;
+  charts?: Record<string, unknown>;
+  geojson?: Record<string, unknown>;
+  interpretation_text?: string;
+  error_message?: string;
+}
+
+export async function uploadMicrodata(formData: FormData): Promise<MicrodataDataset> {
+  const { data } = await api.post<MicrodataDataset>("/microdata/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data;
+}
+
+export async function fetchMicrodataDatasets(skip = 0, limit = 50): Promise<MicrodataDatasetListResponse> {
+  const { data } = await api.get<MicrodataDatasetListResponse>("/microdata/datasets", {
+    params: { skip, limit },
+  });
+  return data;
+}
+
+export async function fetchMicrodataVariables(datasetId: string): Promise<MicrodataVariable[]> {
+  const { data } = await api.get<MicrodataVariable[]>(`/microdata/datasets/${datasetId}/variables`);
+  return data;
+}
+
+export async function runPovertyAnalysis(payload: PovertyAnalysisRequest): Promise<AnalysisResultResponse> {
+  const { data } = await api.post<AnalysisResultResponse>("/microdata/analyze/poverty", payload);
+  return data;
+}
+
+export async function runSpatialPovertyAnalysis(payload: SpatialPovertyAnalysisRequest): Promise<AnalysisResultResponse> {
+  const { data } = await api.post<AnalysisResultResponse>("/microdata/analyze/spatial-poverty", payload);
+  return data;
+}
