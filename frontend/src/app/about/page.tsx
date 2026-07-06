@@ -67,6 +67,11 @@ export default function AboutPage() {
           </div>
         ))}
       </div>
+      <div className="mt-10 text-center">
+        <p className="text-sm text-aic-muted">
+          Official contact: <a href="mailto:aic@hyrin.org" className="text-aic-green font-medium hover:underline">aic@hyrin.org</a>
+        </p>
+      </div>
     </main>
   );
 }
