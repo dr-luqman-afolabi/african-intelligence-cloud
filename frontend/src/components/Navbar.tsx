@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { href: "/sdg", label: "SDG" },
   { href: "/research", label: "AI Research" },
   { href: "/about", label: "About" },
+    { href: "/microdata", label: "Microdata Studio" },
 ];
 
 export default function Navbar() {
