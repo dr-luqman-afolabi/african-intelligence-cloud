@@ -21,88 +21,120 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.create_table(
-        "microdata_projects",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column("name", sa.String(255), nullable=False),
-        sa.Column("description", sa.Text(), nullable=True),
-        sa.Column("country_iso3", sa.String(3), nullable=True),
-        sa.Column("owner_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False),
-        sa.Column("organization_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("organizations.id"), nullable=True),
-        sa.Column("access_status", sa.String(50), nullable=False, server_default="user_upload"),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
-    )
+    bind = op.get_bind()
 
-    op.create_table(
-        "microdata_datasets",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column("project_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("microdata_projects.id"), nullable=True),
-        sa.Column("name", sa.String(255), nullable=False),
-        sa.Column("original_filename", sa.String(500), nullable=False),
-        sa.Column("file_type", sa.String(20), nullable=False),
-        sa.Column("storage_path", sa.String(1000), nullable=False),
-        sa.Column("file_size_bytes", sa.BigInteger(), nullable=True),
-        sa.Column("country_iso3", sa.String(3), nullable=True),
-        sa.Column("survey_series", sa.String(100), nullable=True),
-        sa.Column("year", sa.Integer(), nullable=True),
-        sa.Column("row_count", sa.Integer(), nullable=True),
-        sa.Column("column_count", sa.Integer(), nullable=True),
-        sa.Column("missing_cells", sa.Integer(), nullable=True),
-        sa.Column("access_status", sa.String(50), nullable=False, server_default="user_upload"),
-        sa.Column("uploaded_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
-    )
-    op.create_index("ix_microdata_datasets_country", "microdata_datasets", ["country_iso3"])
-    op.create_index("ix_microdata_datasets_uploaded_by", "microdata_datasets", ["uploaded_by"])
+    def has_table(name: str) -> bool:
+        return name in sa.inspect(bind).get_table_names()
 
-    op.create_table(
-        "microdata_variables",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column("dataset_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("microdata_datasets.id"), nullable=False),
-        sa.Column("variable_name", sa.String(255), nullable=False),
-        sa.Column("variable_label", sa.Text(), nullable=True),
-        sa.Column("value_labels", sa.JSON(), nullable=True),
-        sa.Column("variable_index", sa.Integer(), nullable=True),
-        sa.Column("inferred_dtype", sa.String(50), nullable=True),
-        sa.Column("missing_count", sa.Integer(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
-    )
-    op.create_index("ix_microdata_variables_dataset", "microdata_variables", ["dataset_id"])
+    def has_index(table: str, index_name: str) -> bool:
+        if not has_table(table):
+            return False
+        return any(ix["name"] == index_name for ix in sa.inspect(bind).get_indexes(table))
 
-    op.create_table(
-        "microdata_analysis_jobs",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column("dataset_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("microdata_datasets.id"), nullable=False),
-        sa.Column("job_type", sa.String(50), nullable=False),
-        sa.Column("status", sa.String(50), nullable=False, server_default="pending"),
-        sa.Column("parameters", sa.JSON(), nullable=True),
-        sa.Column("error_message", sa.Text(), nullable=True),
-        sa.Column("requested_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
-        sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),
-    )
+    if not has_table("microdata_projects"):
+        op.create_table(
+            "microdata_projects",
+            sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
+            sa.Column("name", sa.String(255), nullable=False),
+            sa.Column("description", sa.Text(), nullable=True),
+            sa.Column("country_iso3", sa.String(3), nullable=True),
+            sa.Column("owner_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False),
+            sa.Column("organization_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("organizations.id"), nullable=True),
+            sa.Column("access_status", sa.String(50), nullable=False, server_default="user_upload"),
+            sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+            sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        )
 
-    op.create_table(
-        "microdata_analysis_results",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column("job_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("microdata_analysis_jobs.id"), nullable=False),
-        sa.Column("summary_stats", sa.JSON(), nullable=True),
-        sa.Column("tables", sa.JSON(), nullable=True),
-        sa.Column("charts", sa.JSON(), nullable=True),
-        sa.Column("geojson", sa.JSON(), nullable=True),
-        sa.Column("interpretation_text", sa.Text(), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
-    )
+    if not has_table("microdata_datasets"):
+        op.create_table(
+            "microdata_datasets",
+            sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
+            sa.Column("project_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("microdata_projects.id"), nullable=True),
+            sa.Column("name", sa.String(255), nullable=False),
+            sa.Column("original_filename", sa.String(500), nullable=False),
+            sa.Column("file_type", sa.String(20), nullable=False),
+            sa.Column("storage_path", sa.String(1000), nullable=False),
+            sa.Column("file_size_bytes", sa.BigInteger(), nullable=True),
+            sa.Column("country_iso3", sa.String(3), nullable=True),
+            sa.Column("survey_series", sa.String(100), nullable=True),
+            sa.Column("year", sa.Integer(), nullable=True),
+            sa.Column("row_count", sa.Integer(), nullable=True),
+            sa.Column("column_count", sa.Integer(), nullable=True),
+            sa.Column("missing_cells", sa.Integer(), nullable=True),
+            sa.Column("access_status", sa.String(50), nullable=False, server_default="user_upload"),
+            sa.Column("uploaded_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False),
+            sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+            sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        )
+    if not has_index("microdata_datasets", "ix_microdata_datasets_country"):
+        op.create_index("ix_microdata_datasets_country", "microdata_datasets", ["country_iso3"])
+    if not has_index("microdata_datasets", "ix_microdata_datasets_uploaded_by"):
+        op.create_index("ix_microdata_datasets_uploaded_by", "microdata_datasets", ["uploaded_by"])
+
+    if not has_table("microdata_variables"):
+        op.create_table(
+            "microdata_variables",
+            sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
+            sa.Column("dataset_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("microdata_datasets.id"), nullable=False),
+            sa.Column("variable_name", sa.String(255), nullable=False),
+            sa.Column("variable_label", sa.Text(), nullable=True),
+            sa.Column("value_labels", sa.JSON(), nullable=True),
+            sa.Column("variable_index", sa.Integer(), nullable=True),
+            sa.Column("inferred_dtype", sa.String(50), nullable=True),
+            sa.Column("missing_count", sa.Integer(), nullable=True),
+            sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        )
+    if not has_index("microdata_variables", "ix_microdata_variables_dataset"):
+        op.create_index("ix_microdata_variables_dataset", "microdata_variables", ["dataset_id"])
+
+    if not has_table("microdata_analysis_jobs"):
+        op.create_table(
+            "microdata_analysis_jobs",
+            sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
+            sa.Column("dataset_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("microdata_datasets.id"), nullable=False),
+            sa.Column("job_type", sa.String(50), nullable=False),
+            sa.Column("status", sa.String(50), nullable=False, server_default="pending"),
+            sa.Column("parameters", sa.JSON(), nullable=True),
+            sa.Column("error_message", sa.Text(), nullable=True),
+            sa.Column("requested_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=False),
+            sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+            sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),
+        )
+
+    if not has_table("microdata_analysis_results"):
+        op.create_table(
+            "microdata_analysis_results",
+            sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
+            sa.Column("job_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("microdata_analysis_jobs.id"), nullable=False),
+            sa.Column("summary_stats", sa.JSON(), nullable=True),
+            sa.Column("tables", sa.JSON(), nullable=True),
+            sa.Column("charts", sa.JSON(), nullable=True),
+            sa.Column("geojson", sa.JSON(), nullable=True),
+            sa.Column("interpretation_text", sa.Text(), nullable=True),
+            sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
+        )
 
 
 def downgrade() -> None:
-    op.drop_table("microdata_analysis_results")
-    op.drop_table("microdata_analysis_jobs")
-    op.drop_index("ix_microdata_variables_dataset", table_name="microdata_variables")
-    op.drop_table("microdata_variables")
-    op.drop_index("ix_microdata_datasets_uploaded_by", table_name="microdata_datasets")
-    op.drop_index("ix_microdata_datasets_country", table_name="microdata_datasets")
-    op.drop_table("microdata_datasets")
-    op.drop_table("microdata_projects")
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    existing_tables = set(inspector.get_table_names())
+
+    if "microdata_analysis_results" in existing_tables:
+        op.drop_table("microdata_analysis_results")
+    if "microdata_analysis_jobs" in existing_tables:
+        op.drop_table("microdata_analysis_jobs")
+    if "microdata_variables" in existing_tables:
+        existing_indexes = {ix["name"] for ix in inspector.get_indexes("microdata_variables")}
+        if "ix_microdata_variables_dataset" in existing_indexes:
+            op.drop_index("ix_microdata_variables_dataset", table_name="microdata_variables")
+        op.drop_table("microdata_variables")
+    if "microdata_datasets" in existing_tables:
+        existing_indexes = {ix["name"] for ix in inspector.get_indexes("microdata_datasets")}
+        if "ix_microdata_datasets_uploaded_by" in existing_indexes:
+            op.drop_index("ix_microdata_datasets_uploaded_by", table_name="microdata_datasets")
+        if "ix_microdata_datasets_country" in existing_indexes:
+            op.drop_index("ix_microdata_datasets_country", table_name="microdata_datasets")
+        op.drop_table("microdata_datasets")
+    if "microdata_projects" in existing_tables:
+        op.drop_table("microdata_projects")
