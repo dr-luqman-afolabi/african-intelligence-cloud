@@ -11,7 +11,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, wait
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -43,9 +43,10 @@ _HEALTH_CHECK_POOL = ThreadPoolExecutor(max_workers=20, thread_name_prefix="heal
 @router.get("/{source_id}")
 def source_health(source_id: str, db: Session = Depends(get_db)):
     """Return health status for one registered connector."""
-    connector = get_connector(source_id)
-    if connector is None:
-        return {"source_id": source_id, "error": "connector not found"}
+    try:
+        connector = get_connector(source_id)
+    except KeyError:
+        raise HTTPException(status_code=404, detail=f"No connector registered for source_id='{source_id}'")
 
     try:
         status = connector.health_check()

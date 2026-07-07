@@ -187,7 +187,7 @@ def get_goals(db: Session) -> List[dict]:
 def get_sdg_data(goal: int, country: Optional[str], db: Session) -> dict:
     goal_meta = next((g for g in SDG_GOALS if g["goal_number"] == goal), None)
     if not goal_meta:
-        return {"goal": goal, "series": []}
+        return {"goal_number": goal, "series": []}
 
     indicators: List[Indicator] = db.query(Indicator).all()
     stats = _load_indicator_stats(db)
@@ -226,7 +226,7 @@ def get_sdg_data(goal: int, country: Optional[str], db: Session) -> dict:
             }
         )
     return {
-        "goal": goal,
+        "goal_number": goal,
         "title": goal_meta["title"],
         "country": country,
         "series": series,

@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+from types import SimpleNamespace
 from unittest.mock import patch, MagicMock
 
 from app.main import app
@@ -54,7 +55,8 @@ class TestRecommendTheories:
     def test_each_item_has_required_keys(self):
         result = recommend_theories("poverty")
         for item in result:
-            assert "theory" in item
+            # Key is "name" (not "theory") — frontend's TheoryPanel.tsx reads t.name.
+            assert "name" in item
             assert "relevance_score" in item
             assert "african_relevance" in item
             assert "description" in item
@@ -129,39 +131,38 @@ class TestSuggestAfricanDatasets:
 # ---------------------------------------------------------------------------
 # AI service — generate_literature_matrix
 # ---------------------------------------------------------------------------
+def _make_paper(
+    title="Paper", authors=(), published_year=2020, journal=None, doi=None,
+    citation_count=0, is_open_access=False, methods=(), theories=(),
+):
+    """generate_literature_matrix() reads ORM attributes/relationships
+    (paper.methods, paper.theories, paper.authors, ...), not dict keys — use
+    a lightweight stand-in with the same attribute shape instead of a real
+    DB-backed ResearchPaper."""
+    return SimpleNamespace(
+        title=title,
+        authors=[SimpleNamespace(full_name=a) for a in authors],
+        published_year=published_year,
+        journal=journal,
+        doi=doi,
+        citation_count=citation_count,
+        is_open_access=is_open_access,
+        methods=[SimpleNamespace(method_name=m) for m in methods],
+        theories=[SimpleNamespace(theory_name=t) for t in theories],
+    )
+
+
 class TestGenerateLiteratureMatrix:
     def test_returns_list_given_papers(self):
-        papers = [
-            {
-                "title": "Test Paper",
-                "authors": [{"full_name": "Smith J"}],
-                "published_year": 2020,
-                "journal": "Test Journal",
-                "doi": "10.1/test",
-                "citation_count": 5,
-                "is_open_access": True,
-                "topics": [{"name": "poverty"}],
-            }
-        ]
+        papers = [_make_paper(title="Test Paper", authors=["Smith J"], citation_count=5, is_open_access=True)]
         result = generate_literature_matrix(papers)
         assert isinstance(result, list)
         assert len(result) == 1
 
     def test_matrix_row_has_required_keys(self):
-        papers = [
-            {
-                "title": "Paper A",
-                "authors": [],
-                "published_year": 2019,
-                "journal": None,
-                "doi": None,
-                "citation_count": 0,
-                "is_open_access": False,
-                "topics": [],
-            }
-        ]
+        papers = [_make_paper(title="Paper A", published_year=2019)]
         row = generate_literature_matrix(papers)[0]
-        for key in ("title", "authors", "year", "journal", "doi", "citation_count", "is_open_access", "topics"):
+        for key in ("title", "authors", "year", "journal", "doi", "theories_used", "methods_used", "is_open_access", "citation_count"):
             assert key in row
 
 
@@ -198,7 +199,8 @@ class TestGenerateHypotheses:
 # ---------------------------------------------------------------------------
 class TestIdentifyResearchGaps:
     def test_returns_list_of_strings(self):
-        gaps = identify_research_gaps("climate change", [])
+        # Signature is (papers, topic) — matches how the /research router calls it.
+        gaps = identify_research_gaps([], "climate change")
         assert isinstance(gaps, list)
         assert all(isinstance(g, str) for g in gaps)
 

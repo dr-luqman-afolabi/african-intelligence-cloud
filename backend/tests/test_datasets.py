@@ -46,10 +46,16 @@ def client(tmp_path, monkeypatch):
     get_settings.cache_clear()
 
 
-def _register_and_login(client, email="ds@aic.africa"):
-    client.post("/api/v1/auth/register", json={
+def _register_and_login(client, email="ds@aic.africa", admin_token=None):
+    """Register + log in a user. Only the very first user registered in a
+    fresh test DB is auto-verified (bootstrap super_admin); any subsequent
+    user needs an existing admin's token to approve them before they can
+    log in — pass the first user's token as admin_token for those."""
+    reg = client.post("/api/v1/auth/register", json={
         "email": email, "full_name": "DS User", "password": "pass1234",
     })
+    if admin_token:
+        client.post(f"/api/v1/auth/approve/{reg.json()['id']}", headers=_auth(admin_token))
     resp = client.post("/api/v1/auth/login", json={"email": email, "password": "pass1234"})
     return resp.json()["access_token"]
 
@@ -210,7 +216,7 @@ def test_get_dataset_not_found(client):
 
 def test_get_private_dataset_other_user_forbidden(client):
     token1 = _register_and_login(client, email="user1@aic.africa")
-    token2 = _register_and_login(client, email="user2@aic.africa")
+    token2 = _register_and_login(client, email="user2@aic.africa", admin_token=token1)
 
     upload = client.post(
         "/api/v1/datasets/upload",
@@ -225,7 +231,7 @@ def test_get_private_dataset_other_user_forbidden(client):
 
 def test_get_public_dataset_other_user_allowed(client):
     token1 = _register_and_login(client, email="pub1@aic.africa")
-    token2 = _register_and_login(client, email="pub2@aic.africa")
+    token2 = _register_and_login(client, email="pub2@aic.africa", admin_token=token1)
 
     upload = client.post(
         "/api/v1/datasets/upload",
@@ -300,7 +306,7 @@ def test_delete_dataset(client):
 
 def test_delete_other_users_dataset_forbidden(client):
     token1 = _register_and_login(client, email="del1@aic.africa")
-    token2 = _register_and_login(client, email="del2@aic.africa")
+    token2 = _register_and_login(client, email="del2@aic.africa", admin_token=token1)
 
     upload = client.post(
         "/api/v1/datasets/upload",

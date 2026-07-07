@@ -193,7 +193,6 @@ export interface SyncJob {
 
 // ── Connector API functions ───────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fetchConnectors(): Promise<any[]> {
   const { data } = await api.get<any[]>("/connectors");
   return data;

@@ -40,7 +40,10 @@ def test_register_user(client):
     assert resp.status_code == 201
     data = resp.json()
     assert data["email"] == "test@aic.africa"
-    assert data["role"] == "viewer"
+    # The first user ever registered in a fresh DB is bootstrapped as
+    # super_admin (see register_user in auth_service.py) so there's always a
+    # way to approve subsequent pending users.
+    assert data["role"] == "super_admin"
 
 
 def test_register_duplicate_email(client):

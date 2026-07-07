@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.main import app
 from app.database import Base, get_db
@@ -9,7 +10,9 @@ from app.models.country import Country
 from app.models.indicator import Indicator
 from app.models.macro_data import MacroData
 
-engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+engine = create_engine(
+    "sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool
+)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -29,8 +32,8 @@ def client():
     ind = Indicator(code="NY.GDP.PCAP.CD", name="GDP per Capita (USD)", unit="USD", category="Growth")
     db.add_all([nga, ind])
     db.flush()
-    db.add(MacroData(country_id=nga.id, indicator_id=ind.id, year=2022, value=2184.4))
-    db.add(MacroData(country_id=nga.id, indicator_id=ind.id, year=2021, value=2085.8))
+    db.add(MacroData(country_iso3=nga.iso3, indicator_code=ind.code, year=2022, value=2184.4))
+    db.add(MacroData(country_iso3=nga.iso3, indicator_code=ind.code, year=2021, value=2085.8))
     db.commit()
     db.close()
     app.dependency_overrides[get_db] = _override_get_db
