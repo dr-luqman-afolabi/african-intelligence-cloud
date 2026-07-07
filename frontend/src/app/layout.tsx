@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const SITE_URL = "https://aic.hyrin.org";
 
@@ -35,7 +36,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <Navbar />
-        <main className="min-h-screen">{children}</main>
+        <main className="min-h-[calc(100vh-4rem)]">{children}</main>
+        <Footer />
       </body>
     </html>
   );

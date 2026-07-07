@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchCurrentUser, AuthUser } from "@/lib/api";
+import Spinner from "@/components/ui/Spinner";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -30,8 +31,8 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <main className="max-w-3xl mx-auto px-4 py-16 text-center text-aic-muted">
-        Loading your profile…
+      <main className="flex justify-center px-4 py-24">
+        <Spinner />
       </main>
     );
   }
@@ -42,10 +43,7 @@ export default function ProfilePage() {
         <p className="text-aic-muted mb-4">
           {error ?? "You need to sign in to view your profile."}
         </p>
-        <a
-          href="/login"
-          className="px-6 py-3 bg-aic-green text-white font-semibold rounded-lg hover:bg-green-800 transition"
-        >
+        <a href="/login" className="btn-primary px-6 py-3">
           Go to Login
         </a>
       </main>
@@ -64,7 +62,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 space-y-4">
+      <div className="card p-6 space-y-4">
         <div className="flex justify-between border-b border-slate-100 pb-3">
           <span className="text-aic-muted text-sm">Full name</span>
           <span className="font-semibold text-aic-dark">{user.full_name}</span>
@@ -98,10 +96,7 @@ export default function ProfilePage() {
         </a>
       )}
 
-      <button
-        onClick={handleLogout}
-        className="mt-8 px-6 py-3 bg-white border border-slate-200 text-aic-dark font-semibold rounded-lg hover:bg-slate-50 transition"
-      >
+      <button onClick={handleLogout} className="btn-secondary mt-8 px-6 py-3">
         Log out
       </button>
     </main>

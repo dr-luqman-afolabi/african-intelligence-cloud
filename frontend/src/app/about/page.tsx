@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import Logo from "@/components/ui/Logo";
 
 export const metadata: Metadata = {
   title: "About Us",
@@ -70,25 +72,32 @@ const AUDIENCE = [
 
 export default function AboutPage() {
   return (
-    <main className="px-4 py-16">
-      <div className="max-w-4xl mx-auto space-y-14">
-        {/* Header */}
-        <div className="text-center">
-          <div className="mb-5 flex justify-center gap-2">
-            <span className="w-3 h-10 rounded bg-aic-green" />
-            <span className="w-3 h-10 rounded bg-aic-gold" />
-            <span className="w-3 h-10 rounded bg-aic-red" />
+    <div>
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-aic-hero px-4 pb-16 pt-20 sm:pt-24">
+        <div className="pointer-events-none absolute -top-24 right-0 h-72 w-72 rounded-full bg-aic-green/10 blur-3xl animate-float" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-64 w-64 rounded-full bg-aic-gold/10 blur-3xl" />
+
+        <div className="relative mx-auto max-w-3xl text-center">
+          <div className="mb-6 flex justify-center animate-fade-in">
+            <Logo size="lg" />
           </div>
-          <h1 className="text-4xl font-bold text-aic-dark mb-3">
-            About African Intelligence Cloud (AIC)
+          <p className="section-label animate-fade-in">About us</p>
+          <h1 className="mt-2 animate-fade-in-up text-4xl font-bold tracking-tight text-aic-dark sm:text-5xl">
+            African Intelligence Cloud (AIC)
           </h1>
-          <p className="text-lg text-aic-muted italic max-w-2xl mx-auto">
+          <p
+            className="mx-auto mt-4 max-w-2xl animate-fade-in-up text-lg italic text-aic-muted"
+            style={{ animationDelay: "0.1s" }}
+          >
             Reimagining African Research Through AI, Data and Policy Intelligence
           </p>
         </div>
+      </section>
 
+      <div className="mx-auto max-w-4xl space-y-16 px-4 pb-20">
         {/* Intro */}
-        <section className="bg-white rounded-xl border border-slate-100 shadow-sm p-8 space-y-4 text-slate-700 leading-relaxed">
+        <section className="card space-y-4 p-8 leading-relaxed text-slate-700">
           <p>
             Africa possesses one of the fastest-growing ecosystems of development data in the
             world. Governments, national statistical offices, universities, development partners,
@@ -123,19 +132,24 @@ export default function AboutPage() {
 
         {/* Gap AIC fills */}
         <section>
-          <h2 className="text-2xl font-bold text-aic-dark mb-2">The Gap African Intelligence Cloud Fills</h2>
-          <p className="text-slate-700 mb-6 leading-relaxed">
+          <p className="section-label">Why AIC exists</p>
+          <h2 className="mt-2 text-3xl font-bold text-aic-dark">The Gap African Intelligence Cloud Fills</h2>
+          <p className="mt-3 leading-relaxed text-aic-muted">
             African Intelligence Cloud (AIC) was created to bridge this gap. Rather than serving
             as another data repository or dashboard, AIC is an AI-powered African research and
             policy intelligence platform that integrates data discovery, secure data management,
             statistical analysis, geospatial analytics, artificial intelligence, and collaborative
             research into a single cloud-based ecosystem.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {CHALLENGES.map((c) => (
-              <div key={c.title} className="bg-white rounded-xl border border-slate-100 shadow-sm p-5">
-                <h3 className="font-semibold text-aic-green mb-1.5">{c.title}</h3>
-                <p className="text-sm text-slate-600">{c.desc}</p>
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {CHALLENGES.map((c, i) => (
+              <div
+                key={c.title}
+                className="card card-hover animate-fade-in-up p-5"
+                style={{ animationDelay: `${i * 0.05}s` }}
+              >
+                <h3 className="mb-1.5 font-semibold text-aic-green">{c.title}</h3>
+                <p className="text-sm text-slate-500">{c.desc}</p>
               </div>
             ))}
           </div>
@@ -143,21 +157,26 @@ export default function AboutPage() {
 
         {/* What makes AIC different */}
         <section>
-          <h2 className="text-2xl font-bold text-aic-dark mb-2">What Makes AIC Different</h2>
-          <p className="text-slate-700 mb-6 leading-relaxed">
+          <p className="section-label">Capabilities</p>
+          <h2 className="mt-2 text-3xl font-bold text-aic-dark">What Makes AIC Different</h2>
+          <p className="mt-3 leading-relaxed text-aic-muted">
             African Intelligence Cloud is designed specifically for African research priorities.
             The platform combines four complementary capabilities rarely available within a single
             system:
           </p>
-          <div className="space-y-4">
-            {PILLARS.map((p) => (
-              <div key={p.number} className="bg-white rounded-xl border border-slate-100 shadow-sm p-6 flex gap-4">
-                <span className="shrink-0 w-10 h-10 rounded-full bg-aic-green text-white font-bold flex items-center justify-center">
+          <div className="mt-8 space-y-4">
+            {PILLARS.map((p, i) => (
+              <div
+                key={p.number}
+                className="card animate-fade-in-up flex gap-4 p-6"
+                style={{ animationDelay: `${i * 0.05}s` }}
+              >
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-aic-green/10 font-bold text-aic-green">
                   {p.number}
                 </span>
                 <div>
-                  <h3 className="font-bold text-aic-dark mb-1.5">{p.title}</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">{p.body}</p>
+                  <h3 className="mb-1.5 font-semibold text-aic-dark">{p.title}</h3>
+                  <p className="text-sm leading-relaxed text-slate-500">{p.body}</p>
                 </div>
               </div>
             ))}
@@ -165,34 +184,35 @@ export default function AboutPage() {
         </section>
 
         {/* Built for */}
-        <section className="bg-white rounded-xl border border-slate-100 shadow-sm p-8">
-          <h2 className="text-2xl font-bold text-aic-dark mb-4">Built for Africa&apos;s Research Community</h2>
-          <div className="flex flex-wrap gap-2 mb-5">
+        <section className="card p-8">
+          <p className="section-label">Community</p>
+          <h2 className="mt-2 text-3xl font-bold text-aic-dark">Built for Africa&apos;s Research Community</h2>
+          <div className="mt-6 flex flex-wrap gap-2">
             {AUDIENCE.map((a) => (
-              <span key={a} className="text-sm px-3 py-1.5 rounded-full bg-slate-100 text-slate-700">
+              <span key={a} className="badge bg-aic-green/10 text-aic-green">
                 {a}
               </span>
             ))}
           </div>
-          <p className="text-sm text-slate-600 leading-relaxed">
+          <p className="mt-6 text-sm leading-relaxed text-slate-500">
             The platform supports both teaching and professional research by reducing technical
             barriers while maintaining rigorous analytical standards.
           </p>
         </section>
 
         {/* Vision / Mission */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-aic-dark text-white rounded-xl p-8">
-            <h2 className="text-xl font-bold mb-3 text-aic-gold">Vision</h2>
-            <p className="text-slate-200 leading-relaxed">
+        <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="rounded-2xl bg-aic-gradient p-8 text-white shadow-glow">
+            <p className="text-xs font-bold uppercase tracking-widest text-aic-gold">Vision</p>
+            <p className="mt-3 leading-relaxed text-white/85">
               To become Africa&apos;s leading AI-powered research and policy intelligence platform,
               enabling governments, researchers, and development partners to transform data into
               evidence, evidence into policy, and policy into sustainable development outcomes.
             </p>
           </div>
-          <div className="bg-aic-dark text-white rounded-xl p-8">
-            <h2 className="text-xl font-bold mb-3 text-aic-gold">Mission</h2>
-            <p className="text-slate-200 leading-relaxed">
+          <div className="rounded-2xl bg-aic-gradient p-8 text-white shadow-glow">
+            <p className="text-xs font-bold uppercase tracking-widest text-aic-gold">Mission</p>
+            <p className="mt-3 leading-relaxed text-white/85">
               To democratize access to high-quality African data, advanced analytics, geospatial
               intelligence, and artificial intelligence through a secure, collaborative cloud
               platform that strengthens research capacity and evidence-based decision-making
@@ -202,9 +222,10 @@ export default function AboutPage() {
         </section>
 
         {/* Long term ambition */}
-        <section className="bg-white rounded-xl border border-slate-100 shadow-sm p-8">
-          <h2 className="text-2xl font-bold text-aic-dark mb-4">Our Long-Term Ambition</h2>
-          <p className="text-slate-700 leading-relaxed">
+        <section className="card p-8">
+          <p className="section-label">Looking ahead</p>
+          <h2 className="mt-2 text-3xl font-bold text-aic-dark">Our Long-Term Ambition</h2>
+          <p className="mt-3 leading-relaxed text-slate-600">
             African Intelligence Cloud is more than a technology platform. It is a continental
             digital research infrastructure designed to support Africa&apos;s knowledge economy. By
             integrating trusted data sources, modern analytical methods, spatial intelligence, and
@@ -213,7 +234,7 @@ export default function AboutPage() {
             capacity, and accelerate progress toward Africa&apos;s development priorities, including
             the African Union Agenda 2063 and the United Nations Sustainable Development Goals.
           </p>
-          <p className="text-slate-700 leading-relaxed mt-4">
+          <p className="mt-4 leading-relaxed text-slate-600">
             Our objective is to ensure that every African researcher, policymaker, and institution
             has access to a modern, intelligent, and collaborative platform capable of producing
             timely, transparent, and actionable evidence for the continent&apos;s most pressing
@@ -222,9 +243,10 @@ export default function AboutPage() {
         </section>
 
         {/* Message from the Director */}
-        <section className="bg-white rounded-xl border border-slate-100 shadow-sm p-8">
-          <h2 className="text-2xl font-bold text-aic-dark mb-6">Message from the Director</h2>
-          <div className="space-y-4 text-slate-700 leading-relaxed">
+        <section className="card p-8">
+          <p className="section-label">From the founder</p>
+          <h2 className="mt-2 text-3xl font-bold text-aic-dark">Message from the Director</h2>
+          <div className="mt-6 space-y-4 leading-relaxed text-slate-600">
             <p>Welcome to the African Intelligence Cloud (AIC).</p>
             <p>
               Africa stands at a pivotal moment in its development journey. Across the continent,
@@ -269,23 +291,39 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-slate-100 flex items-center gap-4">
-            <span className="w-14 h-14 rounded-full bg-aic-green text-white font-bold text-xl flex items-center justify-center shrink-0">
+          <div className="mt-8 flex items-center gap-4 border-t border-slate-100 pt-6">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-aic-green text-xl font-bold text-white">
               LA
             </span>
             <div>
-              <p className="font-bold text-aic-dark">Dr. Luqman Afolabi</p>
+              <p className="font-semibold text-aic-dark">Dr. Luqman Afolabi</p>
               <p className="text-sm text-slate-500">Founder &amp; Director, African Intelligence Cloud (AIC)</p>
-              <a
-                href="mailto:aluqman@hyrin.org"
-                className="text-sm text-aic-green hover:underline"
-              >
+              <a href="mailto:aluqman@hyrin.org" className="text-sm text-aic-green hover:underline">
                 aluqman@hyrin.org
               </a>
             </div>
           </div>
         </section>
       </div>
-    </main>
+
+      {/* CTA band */}
+      <section className="bg-aic-gradient px-6 py-16">
+        <div className="mx-auto flex max-w-4xl flex-col items-center gap-5 text-center">
+          <h2 className="text-3xl font-bold text-white">Ready to explore the data?</h2>
+          <p className="max-w-xl text-white/80">
+            Join the growing community of researchers and institutions using AIC to turn African
+            data into evidence and evidence into policy.
+          </p>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Link href="/register" className="rounded-xl bg-white px-6 py-3 text-sm font-semibold text-aic-dark shadow-glow transition hover:bg-slate-100">
+              Create free account
+            </Link>
+            <Link href="/dashboard" className="rounded-xl border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10">
+              Open Dashboard
+            </Link>
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }

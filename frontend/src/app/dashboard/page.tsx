@@ -12,6 +12,8 @@ import {
   type IndicatorEntry,
 } from "@/lib/api";
 import MultiMacroChart, { type ChartSeries } from "@/components/MultiMacroChart";
+import PageHeader from "@/components/ui/PageHeader";
+import Spinner from "@/components/ui/Spinner";
 
 const COLORS = ["#0f766e", "#b45309", "#1d4ed8", "#be123c", "#4d7c0f", "#7c3aed", "#c2410c", "#0369a1"];
 
@@ -88,11 +90,12 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-aic-dark mb-2">Macro Dashboard</h1>
-      <p className="text-aic-muted mb-8">
-        Historical macroeconomic, social, and environmental indicators from World Bank Open Data across {countries.length || 54}+ African countries.
-      </p>
+    <div className="max-w-6xl mx-auto px-4 py-10">
+      <PageHeader
+        eyebrow="Macro data"
+        title="Macro Dashboard"
+        description={`Historical macroeconomic, social, and environmental indicators from World Bank Open Data across ${countries.length || 54}+ African countries.`}
+      />
 
       <div className="flex flex-wrap gap-4 mb-6">
         <div>
@@ -100,7 +103,7 @@ export default function Dashboard() {
           <select
             value={country}
             onChange={(e) => setCountry(e.target.value)}
-            className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-aic-green"
+            className="input-field !w-auto min-w-[220px]"
           >
             {countries.map((c) => (
               <option key={c.iso3} value={c.iso3}>{c.name}</option>
@@ -109,7 +112,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 mb-8">
+      <div className="card p-5 mb-8">
         <h2 className="text-sm font-semibold text-aic-dark mb-3">
           Select indicators to combine on one chart ({selectedCodes.length} selected)
         </h2>
@@ -137,10 +140,10 @@ export default function Dashboard() {
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin w-8 h-8 border-4 border-aic-green border-t-transparent rounded-full" />
+          <Spinner />
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+        <div className="card p-6">
           <h2 className="text-lg font-semibold text-aic-dark mb-1">{countryName}</h2>
           <p className="text-sm text-aic-muted mb-6">{selectedCodes.length} indicator(s) plotted together</p>
           <MultiMacroChart series={series} />
@@ -151,7 +154,7 @@ export default function Dashboard() {
               <button
                 onClick={handleInterpret}
                 disabled={interpreting || selectedCodes.length === 0}
-                className="px-4 py-1.5 rounded-full text-sm font-medium bg-aic-green text-white hover:opacity-90 transition disabled:opacity-50"
+                className="btn-primary !py-1.5 !px-4 text-sm"
               >
                 {interpreting ? "Analyzing..." : "Generate Interpretation"}
               </button>

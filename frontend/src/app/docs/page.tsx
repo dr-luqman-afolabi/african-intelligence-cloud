@@ -118,6 +118,8 @@ const METHOD_COLORS: Record<string, string> = {
   PUT: "bg-yellow-100 text-yellow-700",
 };
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 export default function DocsPage() {
   return (
     <div className="min-h-screen bg-slate-50 px-4 py-8">
@@ -128,12 +130,12 @@ export default function DocsPage() {
             <p className="text-sm text-slate-500 mt-0.5">
               Base URL:{" "}
               <code className="bg-slate-100 px-1.5 py-0.5 rounded text-xs font-mono">
-                {process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1
+                {API_URL}/api/v1
               </code>
             </p>
           </div>
           <Link
-            href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/docs`}
+            href={`${API_URL}/docs`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded-xl bg-aic-dark text-white hover:bg-slate-700 transition font-medium"

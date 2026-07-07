@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import clsx from "clsx";
 import { fetchSurveys, SurveyEntry } from "@/lib/api";
+import PageHeader from "@/components/ui/PageHeader";
+import Spinner from "@/components/ui/Spinner";
 
 function AccessBadge({ requiresApproval, redistributionAllowed }: { requiresApproval: boolean; redistributionAllowed: boolean }) {
   if (!requiresApproval && redistributionAllowed) {
@@ -33,13 +35,12 @@ export default function SurveysPage() {
   const filtered = topicFilter === "all" ? surveys : surveys.filter((s) => s.primary_topic === topicFilter);
   
   return (
-    <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-    <div>
-    <h1 className="text-2xl font-bold text-slate-800">Microdata &amp; Survey Catalog</h1>
-    <p className="text-sm text-slate-500 mt-0.5">
-    Household, health, and census microdata series available for research (DHS, LSMS, IPUMS, MICS, and more).
-    </p>
-    </div>
+    <div className="max-w-7xl mx-auto px-6 py-10 space-y-8">
+    <PageHeader
+      eyebrow="Survey catalog"
+      title="Microdata & Survey Catalog"
+      description="Household, health, and census microdata series available for research (DHS, LSMS, IPUMS, MICS, and more)."
+    />
     
       {error && (
       <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">{error}</div>
@@ -61,14 +62,14 @@ export default function SurveysPage() {
     </div>
     
       {loading ? (
-      <div className="text-center py-20 text-slate-400">Loading survey catalog…</div>
+      <div className="flex justify-center py-20"><Spinner /></div>
       ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {filtered.length === 0 && (
         <div className="text-center py-12 text-slate-400 col-span-2">No surveys match the current filter.</div>
       )}
         {filtered.map((s) => (
-        <div key={s.survey_id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col gap-2">
+        <div key={s.survey_id} className="card card-hover p-5 flex flex-col gap-2">
         <div className="flex items-start justify-between gap-2">
         <h2 className="font-semibold text-slate-800">{s.title}</h2>
         <AccessBadge requiresApproval={s.requires_approval} redistributionAllowed={s.redistribution_allowed} />
