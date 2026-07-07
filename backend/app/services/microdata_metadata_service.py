@@ -72,7 +72,10 @@ def load_dataframe(content: bytes, file_extension: str) -> tuple[pd.DataFrame, d
             tmp_path = tmp.name
         try:
             reader = pyreadstat.read_dta if file_extension == "dta" else pyreadstat.read_sav
-            df, rs_meta = reader(tmp_path)
+            # apply_value_formats: without this, labeled/categorical Stata/SPSS variables
+            # (e.g. district, province, poverty status) come back as raw numeric codes
+            # instead of their string labels, breaking any grouping/matching on those columns.
+            df, rs_meta = reader(tmp_path, apply_value_formats=True, formats_as_category=False)
             meta["column_labels"] = dict(zip(rs_meta.column_names, rs_meta.column_labels))
             meta["value_labels"] = rs_meta.variable_value_labels or {}
         finally:

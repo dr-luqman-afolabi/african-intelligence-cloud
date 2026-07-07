@@ -139,8 +139,11 @@ def generate_interpretation(
     for group_name, rows in grouped_results.items():
         if rows:
             top = rows[0]
+            # compute_grouped_poverty labels rows "group"; compute_spatial_poverty labels them
+            # "geo_value" — accept either so this works for both poverty and spatial-poverty jobs.
+            top_label = top.get("group", top.get("geo_value", "unknown"))
             lines.append(
-                f"By {group_name}, poverty is highest in '{top['group']}' with a headcount rate of "
+                f"By {group_name}, poverty is highest in '{top_label}' with a headcount rate of "
                 f"{top['headcount'] * 100:.1f}%."
             )
     return " ".join(lines)

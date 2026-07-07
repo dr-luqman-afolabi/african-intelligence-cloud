@@ -20,3 +20,9 @@ from app.models.research_paper import (
     ResearchPaper, PaperAuthor, PaperTopic, PaperCitation,
     PaperDataset, PaperMethod, PaperTheory, PaperPolicyArea,
 )
+from app.models.microdata import (
+    MicrodataProject, MicrodataDataset, MicrodataVariable,
+    MicrodataAnalysisJob, MicrodataAnalysisResult,
+    MicrodataAccessStatus, MicrodataFileType, MicrodataJobStatus, MicrodataJobType,
+)
+from app.models.spatial import SpatialUnit, SpatialBoundary, AdminLevel, BoundarySource

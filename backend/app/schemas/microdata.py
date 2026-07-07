@@ -69,6 +69,11 @@ class SpatialPovertyAnalysisRequest(BaseModel):
     poverty_line: float
     weight_variable: Optional[str] = None
     geojson_boundary_file: Optional[str] = None
+    # Alternative to geojson_boundary_file: look up previously-uploaded boundaries
+    # (see POST /spatial/boundaries/upload) instead of requiring the caller to
+    # paste GeoJSON inline with every request.
+    country_iso3: Optional[str] = None
+    admin_level: Optional[str] = None
 
 
 class AnalysisResultResponse(BaseModel):

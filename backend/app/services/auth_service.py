@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+from uuid import UUID
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
@@ -59,6 +60,10 @@ def get_current_user(db: Session, token: str) -> User:
     payload = decode_token(token)
     user_id = payload.get("sub")
     if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
+    try:
+        user_id = UUID(str(user_id))
+    except ValueError:
         raise HTTPException(status_code=401, detail="Invalid token payload")
     user = db.query(User).filter(User.id == user_id).first()
     if not user:

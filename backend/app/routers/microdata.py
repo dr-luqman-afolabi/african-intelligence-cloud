@@ -42,10 +42,11 @@ from app.services.poverty_analysis_service import (
 )
 from app.services.spatial_analysis_service import (
     build_spatial_map_payload,
-    compute_morans_i,
+    compute_morans_i_and_lisa,
     compute_spatial_poverty,
     merge_poverty_with_geojson,
 )
+from app.services.spatial_boundary_service import get_boundaries_geojson
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/microdata", tags=["Microdata"])
@@ -278,17 +279,23 @@ def analyze_spatial_poverty(
             df, payload.geo_variable, payload.welfare_variable, payload.poverty_line, payload.weight_variable
         )
 
-        merged_geojson = None
         geojson_data = None
         if payload.geojson_boundary_file:
             try:
                 geojson_data = json.loads(payload.geojson_boundary_file)
-                merged_geojson = merge_poverty_with_geojson(geojson_data, poverty_by_geo, payload.geo_variable)
             except (json.JSONDecodeError, TypeError) as exc:
                 logger.warning("Could not parse geojson_boundary_file: %s", exc)
+        elif payload.country_iso3 and payload.admin_level:
+            try:
+                geojson_data = get_boundaries_geojson(db, payload.country_iso3, payload.admin_level)
+            except HTTPException as exc:
+                logger.warning("No persisted boundaries for %s/%s: %s", payload.country_iso3, payload.admin_level, exc.detail)
 
-        morans_i = compute_morans_i(poverty_by_geo, geojson_data)
-        map_payload = build_spatial_map_payload(poverty_by_geo, merged_geojson, morans_i)
+        merged_geojson = (
+            merge_poverty_with_geojson(geojson_data, poverty_by_geo, payload.geo_variable) if geojson_data else None
+        )
+        morans_i, lisa_clusters = compute_morans_i_and_lisa(merged_geojson)
+        map_payload = build_spatial_map_payload(poverty_by_geo, merged_geojson, morans_i, lisa_clusters)
 
         fallback_stats = {
             "headcount": 0.0, "poverty_gap": 0.0, "squared_poverty_gap": 0.0, "gini": 0.0, "n_obs": 0,
@@ -327,3 +334,38 @@ def analyze_spatial_poverty(
         job.error_message = str(exc)
         db.commit()
         raise HTTPException(status_code=422, detail=f"Spatial poverty analysis failed: {exc}")
+
+
+@router.get("/jobs/{job_id}", response_model=AnalysisResultResponse)
+def get_analysis_job(
+    job_id: UUID,
+    db: Session = Depends(get_db),
+    current_user=Depends(_get_user),
+):
+    """Fetch a previously computed poverty or spatial-poverty analysis result by job id."""
+    job = db.query(MicrodataAnalysisJob).filter(MicrodataAnalysisJob.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Analysis job not found")
+
+    dataset = db.query(MicrodataDataset).filter(MicrodataDataset.id == job.dataset_id).first()
+    if not dataset or dataset.uploaded_by != current_user.id:
+        raise HTTPException(status_code=403, detail="You do not have access to this analysis")
+
+    result = (
+        db.query(MicrodataAnalysisResult)
+        .filter(MicrodataAnalysisResult.job_id == job.id)
+        .order_by(MicrodataAnalysisResult.created_at.desc())
+        .first()
+    )
+
+    return {
+        "job_id": job.id,
+        "status": job.status,
+        "job_type": job.job_type,
+        "summary_stats": result.summary_stats if result else None,
+        "tables": result.tables if result else None,
+        "charts": result.charts if result else None,
+        "geojson": result.geojson if result else None,
+        "interpretation_text": result.interpretation_text if result else None,
+        "error_message": job.error_message,
+    }
