@@ -19,7 +19,9 @@ export default function LoginPage() {
     try {
       const res = await login({ email, password });
       localStorage.setItem("aic_token", res.access_token);
-      router.push("/dashboard");
+      const next = new URLSearchParams(window.location.search).get("next");
+      const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+      router.push(safeNext);
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
