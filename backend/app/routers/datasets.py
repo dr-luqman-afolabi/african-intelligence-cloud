@@ -32,7 +32,7 @@ def _get_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db),
 ):
-    return get_current_user(credentials.credentials, db)
+    return get_current_user(db, credentials.credentials)
 
 
 def _client_ip(request: Request) -> str:

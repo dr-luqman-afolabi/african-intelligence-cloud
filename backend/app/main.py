@@ -37,18 +37,47 @@ settings = get_settings()
 
 
 def _bootstrap_macro_data_sync(db):
-    """Bootstrap: sync each live-registry connector once if it has no data yet."""
+    """Bootstrap: sync each live-registry connector once if it has no data yet.
+
+    Each live connector's fetch() defaults to ALL countries x ALL indicators
+    with no override — e.g. world_bank alone issues 54 x 27 = 1458 sequential
+    live HTTP requests. Must never run in test mode (see app_env == "test"
+    guard below) or it turns every TestClient-backed test into a multi-minute
+    (or effectively hung, if a test file has many such tests queued) live
+    network crawl.
+
+    Also guarded by a per-source cooldown (not just "has any data landed
+    yet"): with --min-instances=0 the service cold-starts on every burst of
+    traffic after idling, and a source whose crawl doesn't finish before the
+    instance is evicted would otherwise retry its full multi-thousand-request
+    crawl from scratch on every single cold start, forever. Skipping sources
+    attempted within the cooldown window bounds that to once per window
+    regardless of restart frequency.
+    """
+    from datetime import datetime, timedelta, timezone
     from app.models.macro_data import MacroData
+    from app.models.sync_job import SyncJob
     from app.connectors.registry import REGISTRY
     from app.services.connector_service import run_sync
     import logging
     log = logging.getLogger(__name__)
+    cooldown_start = datetime.now(timezone.utc) - timedelta(hours=6)
     live_sources = [sid for sid, meta in REGISTRY.items() if meta.get("connector_status") == "live"]
     for source_id in live_sources:
         try:
             has_data = db.query(MacroData).filter(MacroData.source_id == source_id).first() is not None
-            if not has_data:
-                run_sync(db, source_id)
+            if has_data:
+                continue
+            recently_attempted = (
+                db.query(SyncJob)
+                .filter(SyncJob.source_id == source_id, SyncJob.created_at >= cooldown_start)
+                .first()
+                is not None
+            )
+            if recently_attempted:
+                log.info("Skipping bootstrap sync for %s — attempted within the last 6h", source_id)
+                continue
+            run_sync(db, source_id)
         except Exception:
             log.warning("Bootstrap sync failed for %s (non-fatal)", source_id, exc_info=True)
 
@@ -79,8 +108,19 @@ async def lifespan(app: FastAPI):
     # Run DB init/seeding + scheduler start in a background thread so the app
     # can start accepting requests (and pass Cloud Run health checks) right away,
     # instead of blocking ~45s on cold start before serving any traffic.
-    loop = asyncio.get_event_loop()
-    loop.run_in_executor(None, _run_startup_tasks)
+    #
+    # In test mode this background thread is skipped entirely rather than just
+    # having its network-bound bootstrap sync disabled: the `client` fixture
+    # (tests/conftest.py) is function-scoped, so a new TestClient — and a new
+    # orphaned copy of this thread — spawns on every test and is never joined
+    # or cancelled at fixture teardown. seed_countries()/seed_indicators() are
+    # check-then-insert, not upserts, so once enough of these threads pile up
+    # they race the next test's Base.metadata.create_all() + seed step and
+    # raise UNIQUE constraint errors. tests/conftest.py already seeds the
+    # minimal reference data tests need synchronously, so nothing is lost.
+    if settings.app_env != "test":
+        loop = asyncio.get_event_loop()
+        loop.run_in_executor(None, _run_startup_tasks)
     yield
     stop_scheduler()
 

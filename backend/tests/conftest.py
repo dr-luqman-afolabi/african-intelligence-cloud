@@ -3,6 +3,9 @@
 Each test module that imports `client` as a fixture parameter gets a fresh
 in-memory SQLite database so tests are fully isolated.
 """
+import os as _os
+_os.environ.setdefault("APP_ENV", "test")
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -14,7 +17,6 @@ from app.database import Base, get_db
 from app.models.country import Country
 from app.models.indicator import Indicator
 
-import os as _os
 _test_db_url = _os.environ.get("DATABASE_URL", "sqlite:///:memory:")
 _extra_kw = {"connect_args": {"check_same_thread": False}} if "sqlite" in _test_db_url else {}
 engine = create_engine(_test_db_url, **_extra_kw)

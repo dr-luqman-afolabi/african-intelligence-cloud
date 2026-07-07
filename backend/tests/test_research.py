@@ -3,9 +3,13 @@ from __future__ import annotations
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from unittest.mock import patch, MagicMock
 
 from app.main import app
+from app.database import Base, get_db
 from app.services.research_service import (
     recommend_theories,
     recommend_methods,
@@ -17,6 +21,23 @@ from app.services.research_service import (
     suggest_african_datasets,
 )
 from app.services.export_service import export_bibtex, export_ris, export_csv, export_excel
+
+# Dedicated, isolated in-memory DB so GET /research/sources doesn't depend on
+# whichever other test file happened to run before this one and left the
+# shared conftest engine's tables in place.
+_engine = create_engine(
+    "sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool
+)
+_TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
+Base.metadata.create_all(bind=_engine)
+
+
+def _override_get_db():
+    db = _TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 client = TestClient(app)
@@ -308,6 +329,16 @@ class TestExportExcel:
 # REST endpoint — GET /api/v1/research/sources
 # ---------------------------------------------------------------------------
 class TestSourcesEndpoint:
+    # Applied fresh right before each test in this class rather than once at
+    # module import: other test files' `client` fixtures call
+    # app.dependency_overrides.clear() at teardown, which would otherwise wipe
+    # a module-level override set before this class's tests get to run.
+    @pytest.fixture(autouse=True)
+    def _use_isolated_db(self):
+        app.dependency_overrides[get_db] = _override_get_db
+        yield
+        app.dependency_overrides.pop(get_db, None)
+
     def test_returns_200(self):
         response = client.get("/api/v1/research/sources")
         assert response.status_code == 200
