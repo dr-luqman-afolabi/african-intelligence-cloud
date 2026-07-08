@@ -10,6 +10,7 @@ import {
   type MicrodataVariable,
 } from "@/lib/api";
 import VariableMappingPanel from "@/components/microdata/VariableMappingPanel";
+import MicrodataDashboardPanel from "@/components/microdata/MicrodataDashboardPanel";
 
 const ACCEPTED_EXTENSIONS = ".csv,.xlsx,.dta,.sav,.zip";
 
@@ -175,6 +176,15 @@ export default function MicrodataPage() {
         Upload household survey microdata (EICV, UNPS, DHS, LSMS, MICS, Afrobarometer, and more)
         and run poverty, inequality, and spatial analysis directly from your dashboard.
       </p>
+
+      <section className="mb-10">
+        <h2 className="text-xl font-semibold text-aic-dark mb-1">Interactive dashboard</h2>
+        <p className="text-sm text-aic-muted mb-4">
+          Pick a dataset and variables, then run an instant poverty analysis with bar, line, pie,
+          or map output — no page reload needed.
+        </p>
+        <MicrodataDashboardPanel />
+      </section>
 
       <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 mb-10">
         <h2 className="text-xl font-semibold text-aic-dark mb-4">Upload a dataset</h2>
