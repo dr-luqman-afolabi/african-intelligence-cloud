@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.models.country import Country
 from app.models.indicator import Indicator
 from app.models.macro_data import MacroData
 
@@ -195,6 +196,9 @@ def get_sdg_data(goal: int, country: Optional[str], db: Session) -> dict:
     indicator_codes = [i["indicator_code"] for i in matched]
     ind_by_code = {i.code: i for i in indicators}
 
+    # Country metadata for per-country breakdowns (name + region labels).
+    countries = {c.iso3: c for c in db.query(Country).all()}
+
     series = []
     for code in indicator_codes:
         q = db.query(MacroData).filter(MacroData.indicator_code == code)
@@ -217,12 +221,43 @@ def get_sdg_data(goal: int, country: Optional[str], db: Session) -> dict:
                 {"country": "AFRICA_AVG", "year": y, "value": sum(v) / len(v)}
                 for y, v in sorted(by_year.items())
             ]
+
+        # Latest observation per country — the "who is where" view the
+        # aggregate series can't answer. Present regardless of the country
+        # filter so the frontend can always rank countries and group by region.
+        latest_by_country: Dict[str, MacroData] = {}
+        all_rows = (
+            rows if not country
+            else db.query(MacroData).filter(MacroData.indicator_code == code).order_by(MacroData.year).all()
+        )
+        for r in all_rows:
+            if r.value is None:
+                continue
+            current = latest_by_country.get(r.country_iso3)
+            if current is None or r.year > current.year:
+                latest_by_country[r.country_iso3] = r
+        country_breakdown = sorted(
+            (
+                {
+                    "country_iso3": iso3,
+                    "country_name": countries[iso3].name if iso3 in countries else iso3,
+                    "region": countries[iso3].region if iso3 in countries else None,
+                    "year": r.year,
+                    "value": r.value,
+                }
+                for iso3, r in latest_by_country.items()
+            ),
+            key=lambda e: e["value"] if e["value"] is not None else float("-inf"),
+            reverse=True,
+        )
+
         series.append(
             {
                 "indicator_code": code,
                 "indicator_name": ind.name if ind else code,
                 "unit": ind.unit if ind else "",
                 "data": data,
+                "country_breakdown": country_breakdown,
             }
         )
     return {

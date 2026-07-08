@@ -3,11 +3,27 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Spinner from "@/components/ui/Spinner";
 
-// Marketing and auth pages stay public; everything else requires a session.
-const PUBLIC_PATHS = ["/", "/about", "/login", "/register"];
+// Pages built on open, aggregated public data (World Bank, SDG, survey
+// catalogues) are public and crawlable — this is what lets Google index the
+// platform. Anything involving user uploads, private microdata, or account
+// state stays behind login.
+const PUBLIC_PATHS = [
+  "/",
+  "/about",
+  "/login",
+  "/register",
+  "/dashboard",
+  "/sdg",
+  "/docs",
+  "/search",
+  "/surveys",
+  "/health",
+];
+const PUBLIC_PREFIXES = ["/research"];
 
 function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PATHS.includes(pathname);
+  if (PUBLIC_PATHS.includes(pathname)) return true;
+  return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {

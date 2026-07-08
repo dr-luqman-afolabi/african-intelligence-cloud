@@ -41,6 +41,22 @@ def test_sdg_data_with_country_filter(client: TestClient):
     assert resp.status_code == 200
 
 
+def test_sdg_series_include_country_breakdown(client: TestClient):
+    """Every series must carry a per-country latest-value breakdown with
+    country names and regions, so the UI can show who is where — not just a
+    faceless Africa average."""
+    resp = client.get("/api/v1/sdg/data", params={"goal": 3})
+    assert resp.status_code == 200
+    for s in resp.json()["series"]:
+        assert "country_breakdown" in s
+        for entry in s["country_breakdown"]:
+            assert "country_iso3" in entry
+            assert "country_name" in entry
+            assert "region" in entry
+            assert "year" in entry
+            assert "value" in entry
+
+
 def test_sdg_data_goal_out_of_range_low(client: TestClient):
     resp = client.get("/api/v1/sdg/data", params={"goal": 0})
     assert resp.status_code == 422

@@ -32,10 +32,49 @@ export const metadata: Metadata = {
   },
 };
 
+// Structured data so Google understands the site as an organization + a
+// searchable dataset platform (eligible for richer results).
+const JSON_LD = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      name: "African Intelligence Cloud",
+      url: SITE_URL,
+      description:
+        "Macroeconomic data, analytics, and policy intelligence platform for all 54 African countries.",
+    },
+    {
+      "@type": "WebSite",
+      name: "African Intelligence Cloud",
+      url: SITE_URL,
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${SITE_URL}/search?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
+    },
+    {
+      "@type": "Dataset",
+      name: "African Macroeconomic Indicators",
+      description:
+        "Historical macroeconomic, social, and environmental indicators for 54 African countries, sourced from World Bank Open Data, WHO, FAO, and other public sources.",
+      url: `${SITE_URL}/dashboard`,
+      license: "https://creativecommons.org/licenses/by/4.0/",
+      creator: { "@type": "Organization", name: "African Intelligence Cloud" },
+      spatialCoverage: "Africa",
+    },
+  ],
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(JSON_LD) }}
+        />
         <Navbar />
         <main className="min-h-[calc(100vh-4rem)]">
           <AuthGuard>{children}</AuthGuard>

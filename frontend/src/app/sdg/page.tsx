@@ -1,8 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   LineChart,
   Line,
+  BarChart,
+  Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -19,8 +22,18 @@ const SDG_COLORS = [
   "#00689d", "#19486a",
 ];
 
+const REGION_COLORS = ["#0f766e", "#b45309", "#1d4ed8", "#be123c", "#7c3aed", "#0369a1"];
+
 interface SDGSeriesPoint {
   country: string;
+  year: number;
+  value: number;
+}
+
+interface CountryBreakdownEntry {
+  country_iso3: string;
+  country_name: string;
+  region: string | null;
   year: number;
   value: number;
 }
@@ -30,6 +43,7 @@ interface SDGSeriesEntry {
   indicator_name: string;
   unit: string;
   data: SDGSeriesPoint[];
+  country_breakdown?: CountryBreakdownEntry[];
 }
 
 const CLIMATE_KEYWORDS = ["rainfall", "precipitation", "temperature"];
@@ -38,6 +52,137 @@ const AGRI_KEYWORDS = ["agricultur", "cereal", "yield", "crop"];
 function isClimateOrAgri(name: string): boolean {
   const n = name.toLowerCase();
   return CLIMATE_KEYWORDS.some((k) => n.includes(k)) || AGRI_KEYWORDS.some((k) => n.includes(k));
+}
+
+const numFmt = new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 2 });
+
+function SDGIndicatorCard({
+  series,
+  color,
+  isAggregate,
+}: {
+  series: SDGSeriesEntry;
+  color: string;
+  isAggregate: boolean;
+}) {
+  const [view, setView] = useState<"trend" | "countries">("trend");
+  const breakdown = useMemo(() => series.country_breakdown ?? [], [series.country_breakdown]);
+
+  // Stable color per region so the ranking doubles as a regional comparison.
+  const regionColor = useMemo(() => {
+    const regions = Array.from(new Set(breakdown.map((b) => b.region || "Other")));
+    const map: Record<string, string> = {};
+    regions.forEach((r, i) => {
+      map[r] = REGION_COLORS[i % REGION_COLORS.length];
+    });
+    return map;
+  }, [breakdown]);
+
+  const topCountries = breakdown.slice(0, 15);
+
+  return (
+    <div
+      className={`bg-white rounded-xl border shadow-sm p-4 space-y-2 ${
+        isClimateOrAgri(series.indicator_name) ? "border-emerald-300 ring-1 ring-emerald-100" : "border-slate-200"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-slate-700">{series.indicator_name}</p>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-slate-400">{series.unit}</span>
+          {breakdown.length > 0 && (
+            <div className="inline-flex rounded-full bg-slate-100 p-0.5">
+              <button
+                onClick={() => setView("trend")}
+                className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition ${
+                  view === "trend" ? "bg-slate-900 text-white" : "text-slate-500"
+                }`}
+              >
+                Trend
+              </button>
+              <button
+                onClick={() => setView("countries")}
+                className={`px-2 py-0.5 rounded-full text-[11px] font-medium transition ${
+                  view === "countries" ? "bg-slate-900 text-white" : "text-slate-500"
+                }`}
+              >
+                Countries
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+      {isClimateOrAgri(series.indicator_name) && (
+        <span className="inline-block text-[10px] font-semibold uppercase tracking-wide text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
+          Environment / Agriculture
+        </span>
+      )}
+
+      {view === "trend" ? (
+        <>
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={series.data.map((d) => ({ year: d.year, value: d.value }))}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#94a3b8" }} />
+              <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} tickFormatter={(v: number) => numFmt.format(v)} />
+              <Tooltip
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}
+              />
+              <Line type="monotone" dataKey="value" stroke={color} dot={false} strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
+          {isAggregate && (
+            <p className="text-[11px] text-slate-400">
+              Unweighted average across all African countries with data — switch to
+              &quot;Countries&quot; to see individual country values.
+            </p>
+          )}
+        </>
+      ) : (
+        <>
+          <ResponsiveContainer width="100%" height={Math.max(220, topCountries.length * 22)}>
+            <BarChart data={topCountries} layout="vertical" margin={{ left: 8, right: 24 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+              <XAxis type="number" tick={{ fontSize: 11, fill: "#94a3b8" }} tickFormatter={(v: number) => numFmt.format(v)} />
+              <YAxis
+                type="category"
+                dataKey="country_name"
+                width={110}
+                tick={{ fontSize: 11, fill: "#475569" }}
+                interval={0}
+              />
+              <Tooltip
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}
+                formatter={(value: number, _name, item) => {
+                  const entry = item?.payload as CountryBreakdownEntry | undefined;
+                  return [
+                    `${numFmt.format(value)} (${entry?.year ?? "?"})`,
+                    entry?.region ?? "value",
+                  ];
+                }}
+              />
+              <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                {topCountries.map((entry) => (
+                  <Cell key={entry.country_iso3} fill={regionColor[entry.region || "Other"]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="flex flex-wrap gap-x-3 gap-y-1">
+            {Object.entries(regionColor).map(([region, c]) => (
+              <span key={region} className="flex items-center gap-1 text-[11px] text-slate-500">
+                <span className="inline-block w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: c }} />
+                {region}
+              </span>
+            ))}
+          </div>
+          <p className="text-[11px] text-slate-400">
+            Top {topCountries.length} of {breakdown.length} countries, latest available year per country.
+          </p>
+        </>
+      )}
+    </div>
+  );
 }
 
 export default function SDGPage() {
@@ -141,7 +286,7 @@ export default function SDGPage() {
                   onChange={(e) => setSelectedCountry(e.target.value)}
                   className="border border-slate-200 rounded-lg text-sm px-3 py-2 bg-white"
                 >
-                  <option value="">All countries (aggregate)</option>
+                  <option value="">All countries (Africa average)</option>
                   {countries.map((c) => (
                     <option key={c.iso3} value={c.iso3}>
                       {c.name}
@@ -223,43 +368,12 @@ export default function SDGPage() {
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {rawSeries.map((s, idx) => (
-                    <div
+                    <SDGIndicatorCard
                       key={s.indicator_code}
-                      className={`bg-white rounded-xl border shadow-sm p-4 space-y-2 ${
-                        isClimateOrAgri(s.indicator_name) ? "border-emerald-300 ring-1 ring-emerald-100" : "border-slate-200"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-slate-700">{s.indicator_name}</p>
-                        <span className="text-xs text-slate-400">{s.unit}</span>
-                      </div>
-                      {isClimateOrAgri(s.indicator_name) && (
-                        <span className="inline-block text-[10px] font-semibold uppercase tracking-wide text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
-                          Environment / Agriculture
-                        </span>
-                      )}
-                      <ResponsiveContainer width="100%" height={220}>
-                        <LineChart data={s.data.map((d) => ({ year: d.year, value: d.value }))}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                          <XAxis dataKey="year" tick={{ fontSize: 11, fill: "#94a3b8" }} />
-                          <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} />
-                          <Tooltip
-                            contentStyle={{
-                              fontSize: 12,
-                              borderRadius: 8,
-                              border: "1px solid #e2e8f0",
-                            }}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="value"
-                            stroke={SDG_COLORS[idx % 17]}
-                            dot={false}
-                            strokeWidth={2}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
+                      series={s}
+                      color={SDG_COLORS[idx % 17]}
+                      isAggregate={!selectedCountry}
+                    />
                   ))}
                 </div>
               )}
