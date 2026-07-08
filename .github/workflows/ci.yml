@@ -7,7 +7,10 @@ on:
     branches: [main]
 
 env:
-  REGION: us-central1
+  # Must match where cloudbuild.yaml created the production services and the
+  # aic-images Artifact Registry repo — deploying to any other region would
+  # silently create NEW services there instead of updating production.
+  REGION: africa-south1
   PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
   ARTIFACT_REPO: aic-images
 
