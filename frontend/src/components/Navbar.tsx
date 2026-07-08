@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import Logo from "@/components/ui/Logo";
+import { fetchCurrentUser } from "@/lib/api";
 
 const NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
@@ -16,12 +17,15 @@ const NAV_LINKS = [
   { href: "/about", label: "About" },
 ];
 
+const ADMIN_ROLES = new Set(["super_admin", "org_admin"]);
+
 const API_DOCS_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/docs`;
 
 export default function Navbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -33,6 +37,15 @@ export default function Navbar() {
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const token = localStorage.getItem("aic_token");
+    if (!token) return;
+    fetchCurrentUser()
+      .then((u) => setIsAdmin(ADMIN_ROLES.has(u.role)))
+      .catch(() => {});
+  }, []);
 
   return (
     <nav
@@ -64,6 +77,19 @@ export default function Navbar() {
               </Link>
             );
           })}
+          {isAdmin && (
+            <Link
+              href="/admin/users"
+              className={clsx(
+                "rounded-lg px-3 py-2 text-sm font-medium transition",
+                pathname?.startsWith("/admin")
+                  ? "bg-amber-500/20 text-amber-300"
+                  : "text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+              )}
+            >
+              Admin
+            </Link>
+          )}
         </div>
 
         <div className="hidden items-center gap-3 lg:flex">
@@ -118,6 +144,19 @@ export default function Navbar() {
                 </Link>
               );
             })}
+            {isAdmin && (
+              <Link
+                href="/admin/users"
+                className={clsx(
+                  "rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                  pathname?.startsWith("/admin")
+                    ? "bg-amber-500/20 text-amber-300"
+                    : "text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+                )}
+              >
+                Admin
+              </Link>
+            )}
             <a
               href={API_DOCS_URL}
               target="_blank"
