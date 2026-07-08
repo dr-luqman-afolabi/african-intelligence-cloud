@@ -262,6 +262,7 @@ export interface AuthUser {
   role: string;
   is_active: boolean;
   is_verified: boolean;
+  created_at?: string | null;
 }
 export interface TokenResponse { access_token: string; token_type: string }
 
@@ -287,6 +288,27 @@ export async function fetchPendingUsers(): Promise<AuthUser[]> {
 
 export async function approveUser(userId: string): Promise<AuthUser> {
   const { data } = await api.post<AuthUser>(`/auth/approve/${userId}`);
+  return data;
+}
+
+export async function fetchAllUsers(): Promise<AuthUser[]> {
+  const { data } = await api.get<AuthUser[]>("/auth/users");
+  return data;
+}
+
+export async function rejectUser(userId: string): Promise<void> {
+  await api.delete(`/auth/reject/${userId}`);
+}
+
+export async function setUserActive(userId: string, active: boolean): Promise<AuthUser> {
+  const { data } = await api.post<AuthUser>(
+    `/auth/users/${userId}/${active ? "activate" : "deactivate"}`
+  );
+  return data;
+}
+
+export async function setUserRole(userId: string, role: string): Promise<AuthUser> {
+  const { data } = await api.patch<AuthUser>(`/auth/users/${userId}/role`, { role });
   return data;
 }
 

@@ -6,7 +6,13 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User, UserRole
-from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse, UserProfile
+from app.schemas.auth import (
+    RegisterRequest,
+    LoginRequest,
+    RoleUpdateRequest,
+    TokenResponse,
+    UserProfile,
+)
 from app.services import auth_service
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -63,3 +69,48 @@ def approve_pending_user(
     db: Session = Depends(get_db),
 ):
     return auth_service.approve_user(db, user_id)
+
+
+@router.get("/users", response_model=list[UserProfile])
+def all_users(
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return auth_service.list_all_users(db)
+
+
+@router.delete("/reject/{user_id}", status_code=204)
+def reject_pending_user(
+    user_id: UUID,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    auth_service.reject_user(db, admin, user_id)
+
+
+@router.post("/users/{user_id}/activate", response_model=UserProfile)
+def activate_user(
+    user_id: UUID,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return auth_service.set_user_active(db, admin, user_id, True)
+
+
+@router.post("/users/{user_id}/deactivate", response_model=UserProfile)
+def deactivate_user(
+    user_id: UUID,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return auth_service.set_user_active(db, admin, user_id, False)
+
+
+@router.patch("/users/{user_id}/role", response_model=UserProfile)
+def update_user_role(
+    user_id: UUID,
+    payload: RoleUpdateRequest,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    return auth_service.set_user_role(db, admin, user_id, payload.role)

@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, EmailStr
 from uuid import UUID
 from app.models.user import UserRole
@@ -27,6 +28,11 @@ class UserProfile(BaseModel):
     is_active: bool
     is_verified: bool
     organization_id: UUID | None
+    created_at: datetime | None = None
 
     class Config:
         from_attributes = True
+
+
+class RoleUpdateRequest(BaseModel):
+    role: UserRole
