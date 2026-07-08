@@ -1,3 +1,8 @@
+# ⚠️ RETIRED — this pipeline's Cloud Build trigger ("deploy-on-push") was
+# disabled in favor of the GitHub Actions workflow (.github/workflows/ci.yml),
+# which gates deploys on passing tests (this file's test step ignored
+# failures) and now also runs the aic-migrations job. Kept for reference /
+# manual `gcloud builds submit` fallback only.
 steps:
   # ── 1. Run backend tests ───────────────────────────────────────────────────
   - name: python:3.12-slim

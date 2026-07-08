@@ -121,6 +121,20 @@ jobs:
             --platform managed \
             --quiet
 
+      - name: Run database migrations
+        # Update only the image — the job's secrets, Cloud SQL connection, and
+        # service account were configured at creation and must not be clobbered.
+        run: |
+          gcloud run jobs update aic-migrations \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/backend:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --quiet
+          gcloud run jobs execute aic-migrations \
+            --region ${{ env.REGION }} \
+            --project ${{ env.PROJECT_ID }} \
+            --wait --quiet
+
       - name: Deploy frontend to Cloud Run
         run: |
           gcloud run deploy aic-frontend \
