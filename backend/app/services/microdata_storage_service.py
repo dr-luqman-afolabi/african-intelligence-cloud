@@ -12,6 +12,10 @@ from app.config import get_settings
 logger = logging.getLogger(__name__)
 
 ALLOWED_EXTENSIONS = {"csv", "xlsx", "dta", "sav"}
+# .zip is accepted at upload time only — extract_supported_file_from_zip()
+# pulls the real data file out of it before storage/analysis ever see it, so
+# nothing downstream needs to know about zip archives at all.
+ALLOWED_UPLOAD_EXTENSIONS = ALLOWED_EXTENSIONS | {"zip"}
 
 _bucket = None
 
@@ -31,10 +35,15 @@ def get_file_extension(filename: str) -> str:
 
 
 def validate_microdata_file(file: UploadFile) -> str:
-    """Raises ValueError for unsupported extensions. Returns the lowercase extension."""
+    """Raises ValueError for unsupported extensions. Returns the lowercase
+    extension, which may be "zip" — callers must extract the real data file
+    (see microdata_metadata_service.extract_supported_file_from_zip) before
+    treating the upload as a dataset."""
     ext = get_file_extension(file.filename or "")
-    if ext not in ALLOWED_EXTENSIONS:
-        raise ValueError(f"Unsupported file type '.{ext}'. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}")
+    if ext not in ALLOWED_UPLOAD_EXTENSIONS:
+        raise ValueError(
+            f"Unsupported file type '.{ext}'. Allowed: {', '.join(sorted(ALLOWED_UPLOAD_EXTENSIONS))}"
+        )
     return ext
 
 
@@ -43,21 +52,35 @@ def _slugify(value: str) -> str:
     return re.sub(r"[^a-z0-9_\-]", "", value) or "unnamed"
 
 
-def build_storage_blob_name(country: str | None, dataset_name: str, file_name: str) -> str:
+def build_storage_blob_name(
+    country: str | None, survey: str | None, year: int | None, file_name: str
+) -> str:
+    """microdata/{country}/{survey}/{year}/{filename} — country/survey/year
+    default to "unspecified"/"unknown" when not detected or provided, so the
+    path is always well-formed."""
     country_part = _slugify(country) if country else "unspecified"
-    dataset_part = _slugify(dataset_name)
+    survey_part = _slugify(survey) if survey else "unspecified"
+    year_part = str(year) if year else "unknown"
     safe_file_name = f"{uuid.uuid4().hex[:8]}_{Path(file_name).name}"
-    return f"microdata/{country_part}/{dataset_part}/{safe_file_name}"
+    return f"microdata/{country_part}/{survey_part}/{year_part}/{safe_file_name}"
 
 
-async def upload_microdata_file(file: UploadFile, country: str | None, dataset_name: str) -> tuple[str, int]:
-    """Uploads the raw microdata file to Cloud Storage under microdata/{country}/{dataset_name}/{file_name}.
+async def upload_microdata_file(
+    content: bytes,
+    file_name: str,
+    country: str | None,
+    survey: str | None = None,
+    year: int | None = None,
+) -> tuple[str, int]:
+    """Uploads raw microdata bytes to Cloud Storage under
+    microdata/{country}/{survey}/{year}/{filename}.
 
-    Returns (storage_path, size_bytes). Raw microdata is never made public; access is
-    only granted through aggregated analysis endpoints.
+    Takes raw bytes (not an UploadFile) so a file extracted from a ZIP
+    upload can be stored the same way as a directly-uploaded file. Returns
+    (storage_path, size_bytes). Raw microdata is never made public; access
+    is only granted through aggregated analysis endpoints.
     """
-    blob_name = build_storage_blob_name(country, dataset_name, file.filename or "upload")
-    content = await file.read()
+    blob_name = build_storage_blob_name(country, survey, year, file_name)
 
     settings = get_settings()
     if settings.storage_backend == "gcs" and settings.gcs_bucket_name:

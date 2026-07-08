@@ -76,6 +76,84 @@ class SpatialPovertyAnalysisRequest(BaseModel):
     admin_level: Optional[str] = None
 
 
+class VariableMappingEntry(BaseModel):
+    standard_concept: str
+    raw_variable_name: str
+    confidence: Optional[int] = None
+
+
+class VariableMappingSuggestResponse(BaseModel):
+    dataset_id: UUID
+    suggestions: list[VariableMappingEntry]
+
+
+class SaveVariableMappingRequest(BaseModel):
+    dataset_id: UUID
+    mappings: list[VariableMappingEntry]
+
+
+class VariableMappingResponse(BaseModel):
+    id: UUID
+    dataset_id: UUID
+    standard_concept: str
+    raw_variable_name: str
+    confidence: Optional[int] = None
+    auto_detected: bool
+
+    class Config:
+        from_attributes = True
+
+
+class AgricultureAnalysisRequest(BaseModel):
+    dataset_id: UUID
+    weight_variable: Optional[str] = None
+    group_by: Optional[list[str]] = None
+    geography_variable: Optional[str] = None
+    # Optional raw-column overrides; falls back to this dataset's saved
+    # VariableMapping (land_area, crop_output, crop_value, livestock,
+    # fertilizer, improved_seed, irrigation, extension, household_size) for
+    # any concept not overridden here.
+    variable_overrides: Optional[dict[str, str]] = None
+
+
+class DiversificationAnalysisRequest(BaseModel):
+    dataset_id: UUID
+    crop_columns: Optional[list[str]] = None
+    income_columns: Optional[list[str]] = None
+    livelihood_columns: Optional[list[str]] = None
+    livestock_columns: Optional[list[str]] = None
+    weight_variable: Optional[str] = None
+    group_by: Optional[list[str]] = None
+
+
+class SpatialAgricultureAnalysisRequest(BaseModel):
+    dataset_id: UUID
+    geo_variable: str
+    weight_variable: Optional[str] = None
+    variable_overrides: Optional[dict[str, str]] = None
+    geojson_boundary_file: Optional[str] = None
+    country_iso3: Optional[str] = None
+    admin_level: Optional[str] = None
+
+
+class SpatialDiversificationAnalysisRequest(BaseModel):
+    dataset_id: UUID
+    geo_variable: str
+    crop_columns: Optional[list[str]] = None
+    income_columns: Optional[list[str]] = None
+    livelihood_columns: Optional[list[str]] = None
+    livestock_columns: Optional[list[str]] = None
+    weight_variable: Optional[str] = None
+    geojson_boundary_file: Optional[str] = None
+    country_iso3: Optional[str] = None
+    admin_level: Optional[str] = None
+
+
+class AIInterpretRequest(BaseModel):
+    job_id: UUID
+    focus: Optional[str] = None  # e.g. "gender", "district" — asks the narrative to emphasize that dimension
+
+
 class AnalysisResultResponse(BaseModel):
     job_id: UUID
     status: MicrodataJobStatus

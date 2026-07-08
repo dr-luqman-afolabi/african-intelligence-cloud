@@ -9,8 +9,9 @@ import {
   type MicrodataDataset,
   type MicrodataVariable,
 } from "@/lib/api";
+import VariableMappingPanel from "@/components/microdata/VariableMappingPanel";
 
-const ACCEPTED_EXTENSIONS = ".csv,.xlsx,.dta,.sav";
+const ACCEPTED_EXTENSIONS = ".csv,.xlsx,.dta,.sav,.zip";
 
 export default function MicrodataPage() {
   const router = useRouter();
@@ -35,6 +36,8 @@ export default function MicrodataPage() {
   const [geographyVariable, setGeographyVariable] = useState("");
   const [povertyLine, setPovertyLine] = useState("");
   const [groupByVars, setGroupByVars] = useState<string[]>([]);
+  const [cropColumns, setCropColumns] = useState<string[]>([]);
+  const [hasSavedMapping, setHasSavedMapping] = useState(false);
 
   async function loadDatasets() {
     setLoadingDatasets(true);
@@ -88,6 +91,8 @@ export default function MicrodataPage() {
     setWeightVariable("");
     setGeographyVariable("");
     setGroupByVars([]);
+    setCropColumns([]);
+    setHasSavedMapping(false);
     setLoadingVariables(true);
     try {
       const vars = await fetchMicrodataVariables(dataset.id);
@@ -131,10 +136,37 @@ export default function MicrodataPage() {
     router.push("/microdata/spatial?" + params.toString());
   }
 
+  function handleRunAgriculture() {
+    if (!selectedDataset) return;
+    const params = new URLSearchParams();
+    params.set("dataset_id", selectedDataset.id);
+    if (weightVariable) params.set("weight_variable", weightVariable);
+    if (groupByVars.length > 0) params.set("group_by", groupByVars.join(","));
+    router.push("/microdata/agriculture?" + params.toString());
+  }
+
+  function handleRunDiversification() {
+    if (!selectedDataset || cropColumns.length < 2) return;
+    const params = new URLSearchParams();
+    params.set("dataset_id", selectedDataset.id);
+    params.set("crop_columns", cropColumns.join(","));
+    if (weightVariable) params.set("weight_variable", weightVariable);
+    if (groupByVars.length > 0) params.set("group_by", groupByVars.join(","));
+    router.push("/microdata/diversification?" + params.toString());
+  }
+
+  function toggleCropColumn(variableName: string) {
+    setCropColumns((prev) =>
+      prev.includes(variableName) ? prev.filter((v) => v !== variableName) : [...prev, variableName]
+    );
+  }
+
   const canRunPoverty = Boolean(selectedDataset && welfareVariable && povertyLine);
   const canRunSpatial = Boolean(
     selectedDataset && welfareVariable && povertyLine && geographyVariable
   );
+  const canRunAgriculture = Boolean(selectedDataset && hasSavedMapping);
+  const canRunDiversification = Boolean(selectedDataset && cropColumns.length >= 2);
 
   return (
     <main className="max-w-5xl mx-auto px-4 py-16">
@@ -170,7 +202,7 @@ export default function MicrodataPage() {
           </div>
           <div className="sm:col-span-1">
             <label className="block text-sm font-medium text-aic-dark mb-1">
-              File (.csv, .xlsx, .dta, .sav)
+              File (.csv, .xlsx, .dta, .sav, or .zip)
             </label>
             <input
               type="file"
@@ -339,6 +371,28 @@ export default function MicrodataPage() {
                   ))}
                 </div>
               </div>
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-aic-dark mb-2">
+                  Crop / income source columns (for diversification — select 2+)
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {variables.map((v) => (
+                    <button
+                      type="button"
+                      key={v.id}
+                      onClick={() => toggleCropColumn(v.variable_name)}
+                      className={
+                        "px-3 py-1 rounded-full text-sm border " +
+                        (cropColumns.includes(v.variable_name)
+                          ? "bg-aic-dark text-white border-aic-dark"
+                          : "border-slate-300 text-aic-dark")
+                      }
+                    >
+                      {v.variable_name}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
           <div className="flex flex-wrap gap-4">
@@ -356,7 +410,40 @@ export default function MicrodataPage() {
             >
               Run spatial analysis
             </button>
+            <button
+              onClick={handleRunAgriculture}
+              disabled={!canRunAgriculture}
+              title={canRunAgriculture ? "" : "Save a variable mapping below first (needs land_area / crop_output / crop_value etc.)"}
+              className="bg-aic-green text-white px-5 py-2 rounded-lg font-medium disabled:opacity-50"
+            >
+              Run agriculture analysis
+            </button>
+            <button
+              onClick={handleRunDiversification}
+              disabled={!canRunDiversification}
+              title={canRunDiversification ? "" : "Select at least two crop/income source columns above"}
+              className="bg-aic-dark text-white px-5 py-2 rounded-lg font-medium disabled:opacity-50"
+            >
+              Run diversification analysis
+            </button>
           </div>
+        </section>
+      )}
+
+      {selectedDataset && variables.length > 0 && (
+        <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 mt-10">
+          <h2 className="text-xl font-semibold text-aic-dark mb-1">Variable mapping</h2>
+          <p className="text-sm text-aic-muted mb-4">
+            Map this survey&apos;s raw columns to standard concepts (household ID, welfare, gender,
+            district, land area, ...) so agriculture and cross-survey analyses can run without
+            knowing each survey&apos;s own naming conventions.
+          </p>
+          <VariableMappingPanel
+            datasetId={selectedDataset.id}
+            variables={variables}
+            onSaved={() => setHasSavedMapping(true)}
+            onLoadedExisting={() => setHasSavedMapping(true)}
+          />
         </section>
       )}
     </main>

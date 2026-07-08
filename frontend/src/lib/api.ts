@@ -695,3 +695,80 @@ export async function runSpatialPovertyAnalysis(payload: SpatialPovertyAnalysisR
   const { data } = await api.post<AnalysisResultResponse>("/microdata/analyze/spatial-poverty", payload);
   return data;
 }
+
+// ── LSMS Analytics Engine: variable mapping ─────────────────────────────────
+
+export interface VariableMappingEntry {
+  standard_concept: string;
+  raw_variable_name: string;
+  confidence?: number | null;
+}
+
+export interface VariableMappingRecord extends VariableMappingEntry {
+  id: string;
+  dataset_id: string;
+  auto_detected: boolean;
+}
+
+export async function fetchMicrodataDataset(datasetId: string): Promise<MicrodataDataset> {
+  const { data } = await api.get<MicrodataDataset>(`/microdata/datasets/${datasetId}`);
+  return data;
+}
+
+export async function suggestVariableMapping(datasetId: string): Promise<{ dataset_id: string; suggestions: VariableMappingEntry[] }> {
+  const { data } = await api.get(`/microdata/datasets/${datasetId}/mapping/suggest`);
+  return data;
+}
+
+export async function fetchVariableMapping(datasetId: string): Promise<VariableMappingRecord[]> {
+  const { data } = await api.get<VariableMappingRecord[]>(`/microdata/datasets/${datasetId}/mapping`);
+  return data;
+}
+
+export async function saveVariableMapping(datasetId: string, mappings: VariableMappingEntry[]): Promise<VariableMappingRecord[]> {
+  const { data } = await api.post<VariableMappingRecord[]>("/microdata/mapping", {
+    dataset_id: datasetId,
+    mappings,
+  });
+  return data;
+}
+
+// ── LSMS Analytics Engine: agriculture & diversification ────────────────────
+
+export interface AgricultureAnalysisRequest {
+  dataset_id: string;
+  weight_variable?: string;
+  group_by?: string[];
+  geography_variable?: string;
+  variable_overrides?: Record<string, string>;
+}
+
+export interface DiversificationAnalysisRequest {
+  dataset_id: string;
+  crop_columns?: string[];
+  income_columns?: string[];
+  livelihood_columns?: string[];
+  livestock_columns?: string[];
+  weight_variable?: string;
+  group_by?: string[];
+}
+
+export async function runAgricultureAnalysis(payload: AgricultureAnalysisRequest): Promise<AnalysisResultResponse> {
+  const { data } = await api.post<AnalysisResultResponse>("/microdata/analyze/agriculture", payload);
+  return data;
+}
+
+export async function runDiversificationAnalysis(payload: DiversificationAnalysisRequest): Promise<AnalysisResultResponse> {
+  const { data } = await api.post<AnalysisResultResponse>("/microdata/analyze/diversification", payload);
+  return data;
+}
+
+export async function fetchAnalysisResult(jobId: string): Promise<AnalysisResultResponse> {
+  const { data } = await api.get<AnalysisResultResponse>(`/microdata/results/${jobId}`);
+  return data;
+}
+
+export async function generateAIInterpretation(jobId: string, focus?: string): Promise<AnalysisResultResponse> {
+  const { data } = await api.post<AnalysisResultResponse>("/microdata/ai-interpret", { job_id: jobId, focus });
+  return data;
+}

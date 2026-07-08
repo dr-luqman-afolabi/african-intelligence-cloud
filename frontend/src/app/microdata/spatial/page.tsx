@@ -1,8 +1,15 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { runSpatialPovertyAnalysis, type AnalysisResultResponse } from "@/lib/api";
+
+// Leaflet reads `window` at import time — must load client-side only.
+const ChoroplethMap = dynamic(() => import("@/components/microdata/ChoroplethMap"), {
+  ssr: false,
+  loading: () => <div className="h-64 flex items-center justify-center text-aic-muted text-sm">Loading map...</div>,
+});
 
 function formatPercent(value: unknown) {
   if (typeof value !== "number") return "—";
@@ -79,10 +86,21 @@ function SpatialResultsInner() {
         <>
           <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 mb-10">
             <h2 className="text-xl font-semibold text-aic-dark mb-4">Poverty map</h2>
-            <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center h-64 text-aic-muted text-sm text-center px-6">
-              Map rendering placeholder &mdash; supply a GeoJSON boundary file when running the
-              analysis to enable choropleth mapping of poverty rates by {geoVariable || "region"}.
-            </div>
+            {result.geojson && (result.geojson as unknown as GeoJSON.FeatureCollection).features?.length ? (
+              <ChoroplethMap
+                geojson={result.geojson as unknown as GeoJSON.FeatureCollection}
+                valueField="poverty_headcount"
+                label="Poverty headcount"
+                formatValue={(v) => (v * 100).toFixed(1) + "%"}
+              />
+            ) : (
+              <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center h-64 text-aic-muted text-sm text-center px-6">
+                No boundary geometry was available for this analysis. Upload GADM/OCHA boundaries via
+                POST /spatial/boundaries/upload (GeoJSON or zipped shapefile), or pass a GeoJSON file
+                when running the analysis, to enable choropleth mapping of poverty rates by{" "}
+                {geoVariable || "region"}.
+              </div>
+            )}
           </section>
 
           <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 mb-10">

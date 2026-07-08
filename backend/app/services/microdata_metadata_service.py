@@ -5,11 +5,41 @@ import os
 import re
 import logging
 import tempfile
+import zipfile
 from typing import Any
 
 import pandas as pd
 
 logger = logging.getLogger(__name__)
+
+SUPPORTED_DATA_EXTENSIONS = {"csv", "xlsx", "dta", "sav"}
+
+
+def extract_supported_file_from_zip(content: bytes) -> tuple[bytes, str, str]:
+    """Given a .zip file's bytes (e.g. a zipped Stata export or a folder of
+    survey files), find the first supported microdata file inside and
+    return (content, extension, filename). If multiple candidates exist,
+    picks the largest — the real dataset rather than a small companion
+    codebook/readme file. Raises ValueError if none found."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(content)) as zf:
+            candidates = []
+            for name in zf.namelist():
+                if name.endswith("/") or "__MACOSX" in name or os.path.basename(name).startswith("."):
+                    continue
+                ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+                if ext in SUPPORTED_DATA_EXTENSIONS:
+                    candidates.append((name, ext, zf.getinfo(name).file_size))
+            if not candidates:
+                raise ValueError(
+                    "No supported data file (.csv, .xlsx, .dta, .sav) found inside the ZIP archive."
+                )
+            candidates.sort(key=lambda t: t[2], reverse=True)
+            name, ext, _ = candidates[0]
+            extracted = zf.read(name)
+            return extracted, ext, os.path.basename(name)
+    except zipfile.BadZipFile as exc:
+        raise ValueError(f"Uploaded file is not a valid ZIP archive: {exc}")
 
 COUNTRY_HINTS = {
     "rwanda": "RWA", "rwa": "RWA",

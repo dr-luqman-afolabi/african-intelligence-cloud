@@ -38,6 +38,42 @@ class MicrodataJobStatus(str, enum.Enum):
 class MicrodataJobType(str, enum.Enum):
     POVERTY = "poverty"
     SPATIAL_POVERTY = "spatial_poverty"
+    AGRICULTURE = "agriculture"
+    DIVERSIFICATION = "diversification"
+    SPATIAL_AGRICULTURE = "spatial_agriculture"
+    SPATIAL_DIVERSIFICATION = "spatial_diversification"
+
+
+class StandardConcept(str, enum.Enum):
+    """Canonical LSMS-family concepts that raw survey variables get mapped to,
+    so poverty/agriculture/diversification analysis can run the same way
+    regardless of each survey's own column-naming conventions."""
+    HOUSEHOLD_ID = "household_id"
+    COUNTRY = "country"
+    REGION = "region"
+    PROVINCE = "province"
+    DISTRICT = "district"
+    SECTOR = "sector"
+    URBAN_RURAL = "urban_rural"
+    GENDER = "gender"
+    AGE = "age"
+    EDUCATION = "education"
+    HOUSEHOLD_SIZE = "household_size"
+    WELFARE = "welfare"
+    CONSUMPTION = "consumption"
+    INCOME = "income"
+    WEIGHT = "weight"
+    STRATA = "strata"
+    CLUSTER = "cluster"
+    LAND_AREA = "land_area"
+    CROP_OUTPUT = "crop_output"
+    CROP_VALUE = "crop_value"
+    LIVESTOCK = "livestock"
+    FERTILIZER = "fertilizer"
+    IMPROVED_SEED = "improved_seed"
+    IRRIGATION = "irrigation"
+    EXTENSION = "extension"
+    POVERTY_STATUS = "poverty_status"
 
 
 class MicrodataProject(Base):
@@ -87,6 +123,7 @@ class MicrodataDataset(Base):
     uploader = relationship("User", foreign_keys=[uploaded_by])
     variables = relationship("MicrodataVariable", back_populates="dataset", cascade="all, delete-orphan")
     jobs = relationship("MicrodataAnalysisJob", back_populates="dataset", cascade="all, delete-orphan")
+    mappings = relationship("VariableMapping", back_populates="dataset", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("ix_microdata_datasets_country", "country_iso3"),
@@ -113,6 +150,32 @@ class MicrodataVariable(Base):
 
     __table_args__ = (
         Index("ix_microdata_variables_dataset", "dataset_id"),
+    )
+
+
+class VariableMapping(Base):
+    """Maps one raw survey column to a canonical StandardConcept for a dataset.
+    One standard concept maps to at most one raw variable per dataset (e.g. a
+    dataset has exactly one "welfare" column), enforced by the unique index."""
+    __tablename__ = "variable_mappings"
+
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    dataset_id = Column(Uuid(as_uuid=True), ForeignKey("microdata_datasets.id"), nullable=False)
+
+    standard_concept = Column(Enum(StandardConcept), nullable=False)
+    raw_variable_name = Column(String(255), nullable=False)
+    confidence = Column(Integer, nullable=True)  # 0-100, null when manually set/confirmed
+    auto_detected = Column(Boolean, nullable=False, default=False)
+
+    created_by = Column(Uuid(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    dataset = relationship("MicrodataDataset", back_populates="mappings")
+
+    __table_args__ = (
+        Index("ix_variable_mappings_dataset", "dataset_id"),
+        Index("ix_variable_mappings_dataset_concept", "dataset_id", "standard_concept", unique=True),
     )
 
 

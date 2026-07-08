@@ -36,13 +36,40 @@ def merge_poverty_with_geojson(
     geojson_property_key: str,
 ) -> dict[str, Any]:
     """Merges computed poverty indices into a GeoJSON FeatureCollection's feature properties.
+    Thin wrapper over merge_stats_with_geojson() for the poverty-specific field set."""
+    return merge_stats_with_geojson(
+        geojson, poverty_by_geo, geojson_property_key,
+        rank_field="poverty_headcount",
+        field_map={
+            "headcount": "poverty_headcount",
+            "poverty_gap": "poverty_gap",
+            "squared_poverty_gap": "squared_poverty_gap",
+            "gini": "gini",
+            "n_obs": "n_obs",
+        },
+    )
+
+
+def merge_stats_with_geojson(
+    geojson: dict[str, Any],
+    stats_by_geo: list[dict[str, Any]],
+    geojson_property_key: str,
+    rank_field: str,
+    field_map: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Merges any per-geography stats (poverty, agriculture, or
+    diversification) into a GeoJSON FeatureCollection's feature properties —
+    the general form merge_poverty_with_geojson() delegates to.
 
     Matches on `geojson_property_key` first, falling back to `admin_code`/`admin_name` (present
     on persisted boundaries from spatial_boundary_service). Returns only features that matched a
-    row — geometries with no poverty data would render as blank/null on the map anyway — each
-    carrying a `rank` field (by headcount, descending) so the frontend doesn't need to re-sort.
+    row — geometries with no data would render as blank/null on the map anyway — each carrying a
+    `rank` field (by `rank_field`, descending) so the frontend doesn't need to re-sort.
+
+    `field_map` renames stat dict keys -> GeoJSON property names (e.g.
+    {"headcount": "poverty_headcount"}); defaults to keeping stat keys as-is.
     """
-    poverty_lookup = {_norm(row["geo_value"]): row for row in poverty_by_geo}
+    lookup = {_norm(row["geo_value"]): row for row in stats_by_geo}
 
     def _feature_key(feature: dict[str, Any]) -> str | None:
         props = feature.get("properties", {})
@@ -54,21 +81,20 @@ def merge_poverty_with_geojson(
     matched_features = []
     for feature in geojson.get("features", []):
         key = _feature_key(feature)
-        match = poverty_lookup.get(key) if key else None
+        match = lookup.get(key) if key else None
         if not match:
             continue
         properties = dict(feature.get("properties", {}))
-        properties.update({
-            "poverty_headcount": match["headcount"],
-            "poverty_gap": match["poverty_gap"],
-            "squared_poverty_gap": match["squared_poverty_gap"],
-            "gini": match["gini"],
-            "n_obs": match["n_obs"],
-            "geo_value": match["geo_value"],
-        })
+        for stat_key, value in match.items():
+            if stat_key == "geo_value":
+                continue
+            out_key = (field_map or {}).get(stat_key, stat_key)
+            properties[out_key] = value
+        properties["geo_value"] = match["geo_value"]
         matched_features.append({**feature, "properties": properties})
 
-    matched_features.sort(key=lambda f: f["properties"]["poverty_headcount"], reverse=True)
+    matched_features = [f for f in matched_features if f["properties"].get(rank_field) is not None]
+    matched_features.sort(key=lambda f: f["properties"][rank_field], reverse=True)
     for idx, feature in enumerate(matched_features, start=1):
         feature["properties"]["rank"] = idx
 
@@ -77,13 +103,18 @@ def merge_poverty_with_geojson(
 
 def compute_morans_i_and_lisa(
     merged_geojson: dict[str, Any] | None,
+    value_field: str = "poverty_headcount",
 ) -> tuple[dict[str, Any], list[dict[str, Any]] | None]:
-    """Computes Moran's I global autocorrelation and LISA local cluster classification.
+    """Computes Moran's I global autocorrelation and LISA local cluster classification
+    over `value_field` (any numeric property merged onto the GeoJSON — poverty headcount,
+    crop yield, a diversification index, ...). LISA's HH/LL quadrants are the hotspot/
+    coldspot classification: HH = statistically significant cluster of high values
+    surrounded by high neighbors (a hotspot), LL = the low-value equivalent (a coldspot).
 
-    Takes the *merged* (matched + ranked) GeoJSON so geometry and poverty values are guaranteed
-    to be in the same order — building the weights matrix from the raw input geojson while reading
-    values from a separately-sorted poverty list (the previous approach) silently misaligned the
-    two whenever they weren't already in identical order.
+    Takes the *merged* (matched + ranked) GeoJSON so geometry and values are guaranteed
+    to be in the same order — building the weights matrix from the raw input geojson while
+    reading values from a separately-sorted stats list would silently misalign the two
+    whenever they weren't already in identical order.
     """
     features = (merged_geojson or {}).get("features", [])
     if len(features) < 5:
@@ -99,7 +130,7 @@ def compute_morans_i_and_lisa(
         from esda.moran import Moran, Moran_Local
 
         geoms = [shape(f["geometry"]) for f in features]
-        values = [f["properties"]["poverty_headcount"] for f in features]
+        values = [f["properties"][value_field] for f in features]
         gdf = gpd.GeoDataFrame({"value": values}, geometry=geoms, crs="EPSG:4326")
 
         w = Queen.from_dataframe(gdf, use_index=False)
