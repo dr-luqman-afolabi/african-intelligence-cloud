@@ -26,6 +26,7 @@ from app.services.scheduler_service import start_scheduler, stop_scheduler
 from app.services.research_source_service import seed_research_sources
 from app.routers.research import router as research_router
 from app.routers.microdata import router as microdata_router
+from app.routers.microdata_explorer import router as microdata_explorer_router
 from app.routers.spatial import router as spatial_router
 import app.connectors.tier1 # noqa: F401 — triggers all register_connector() calls
 import app.connectors.tier2 # noqa: F401 — triggers all tier2 register_connector() calls
@@ -157,6 +158,7 @@ app.include_router(search_router, prefix="/api/v1")
 app.include_router(sdg_router, prefix="/api/v1")
 app.include_router(research_router, prefix="/api/v1")
 app.include_router(microdata_router, prefix="/api/v1")
+app.include_router(microdata_explorer_router, prefix="/api/v1")
 app.include_router(spatial_router, prefix="/api/v1")
 
 @app.get("/health", tags=["Health"])

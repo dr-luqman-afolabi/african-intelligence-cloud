@@ -24,5 +24,7 @@ from app.models.microdata import (
     MicrodataProject, MicrodataDataset, MicrodataVariable,
     MicrodataAnalysisJob, MicrodataAnalysisResult,
     MicrodataAccessStatus, MicrodataFileType, MicrodataJobStatus, MicrodataJobType,
+    VariableMapping, StandardConcept,
+    MicrodataExplorerSession, ExplorerLayer,
 )
 from app.models.spatial import SpatialUnit, SpatialBoundary, AdminLevel, BoundarySource

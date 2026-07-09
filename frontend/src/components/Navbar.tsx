@@ -9,6 +9,7 @@ import { fetchCurrentUser } from "@/lib/api";
 const NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/microdata", label: "Microdata Studio" },
+  { href: "/microdata/explorer", label: "Spatial Explorer" },
   { href: "/research", label: "AI Research" },
   { href: "/datasets", label: "Datasets" },
   { href: "/connectors", label: "Connectors" },

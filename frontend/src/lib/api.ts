@@ -794,3 +794,96 @@ export async function generateAIInterpretation(jobId: string, focus?: string): P
   const { data } = await api.post<AnalysisResultResponse>("/microdata/ai-interpret", { job_id: jobId, focus });
   return data;
 }
+
+// ── Interactive Spatial Explorer: sessions ──────────────────────────────────
+
+export type ExplorerLayer = "poverty" | "agriculture" | "diversification";
+
+export interface ExplorerFilter {
+  variable: string;
+  op: string; // eq | ne | in | not_in | gt | gte | lt | lte | between | contains
+  value: unknown;
+}
+
+export interface ExplorerSessionState {
+  geo_variable?: string;
+  welfare_variable?: string;
+  poverty_line?: number;
+  weight_variable?: string;
+  filters?: ExplorerFilter[];
+  variable_overrides?: Record<string, string>;
+  crop_columns?: string[];
+  income_columns?: string[];
+  livelihood_columns?: string[];
+  livestock_columns?: string[];
+  geojson_boundary_file?: string;
+  map_view?: Record<string, unknown>;
+  last_job_ids?: Record<string, string>;
+  [key: string]: unknown;
+}
+
+export interface ExplorerSession {
+  id: string;
+  name: string;
+  owner_id: string;
+  dataset_id: string | null;
+  country_iso3: string | null;
+  admin_level: string | null;
+  active_layer: ExplorerLayer;
+  state: ExplorerSessionState | null;
+  last_result_job_id: string | null;
+  created_at: string;
+  updated_at?: string | null;
+}
+
+export interface ExplorerSessionCreate {
+  name?: string;
+  dataset_id?: string | null;
+  country_iso3?: string | null;
+  admin_level?: string | null;
+  active_layer?: ExplorerLayer;
+  state?: ExplorerSessionState;
+}
+
+export async function createExplorerSession(payload: ExplorerSessionCreate): Promise<ExplorerSession> {
+  const { data } = await api.post<ExplorerSession>("/microdata/sessions", payload);
+  return data;
+}
+
+export async function listExplorerSessions(): Promise<ExplorerSession[]> {
+  const { data } = await api.get<ExplorerSession[]>("/microdata/sessions");
+  return data;
+}
+
+export async function getExplorerSession(sessionId: string): Promise<ExplorerSession> {
+  const { data } = await api.get<ExplorerSession>(`/microdata/sessions/${sessionId}`);
+  return data;
+}
+
+export async function updateExplorerSession(
+  sessionId: string,
+  patch: Partial<ExplorerSessionCreate>,
+): Promise<ExplorerSession> {
+  const { data } = await api.patch<ExplorerSession>(`/microdata/sessions/${sessionId}`, patch);
+  return data;
+}
+
+export async function deleteExplorerSession(sessionId: string): Promise<void> {
+  await api.delete(`/microdata/sessions/${sessionId}`);
+}
+
+export async function runExplorerSession(
+  sessionId: string,
+  overrides?: { active_layer?: ExplorerLayer; state?: ExplorerSessionState },
+): Promise<AnalysisResultResponse> {
+  const { data } = await api.post<AnalysisResultResponse>(
+    `/microdata/sessions/${sessionId}/run`,
+    overrides ?? {},
+  );
+  return data;
+}
+
+export async function fetchExplorerSessionResult(sessionId: string): Promise<AnalysisResultResponse> {
+  const { data } = await api.get<AnalysisResultResponse>(`/microdata/sessions/${sessionId}/result`);
+  return data;
+}

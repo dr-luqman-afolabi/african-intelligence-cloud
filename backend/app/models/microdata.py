@@ -214,3 +214,55 @@ class MicrodataAnalysisResult(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     job = relationship("MicrodataAnalysisJob", back_populates="result")
+
+
+class ExplorerLayer(str, enum.Enum):
+    """Which analytical layer an interactive spatial-explorer session is
+    currently rendering on the map."""
+    POVERTY = "poverty"
+    AGRICULTURE = "agriculture"
+    DIVERSIFICATION = "diversification"
+
+
+class MicrodataExplorerSession(Base):
+    """A saved, replayable interactive spatial-exploration session.
+
+    Persists everything needed to reconstruct an exploration: which dataset
+    and admin boundaries are loaded, which analytical layer (poverty /
+    agriculture / diversification) is active, the row filters applied, the
+    per-layer variable selections, and the map view. Running the session
+    delegates to the same spatial analysis services the one-shot
+    /analyze/spatial-* endpoints use, so no raw microdata is ever exposed —
+    only aggregated, choropleth-ready GeoJSON."""
+    __tablename__ = "microdata_explorer_sessions"
+
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String(255), nullable=False, default="Untitled exploration")
+    owner_id = Column(Uuid(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    dataset_id = Column(
+        Uuid(as_uuid=True), ForeignKey("microdata_datasets.id", ondelete="SET NULL"), nullable=True
+    )
+
+    country_iso3 = Column(String(3), nullable=True)
+    admin_level = Column(String(10), nullable=True)
+    active_layer = Column(Enum(ExplorerLayer), nullable=False, default=ExplorerLayer.POVERTY)
+
+    # Full replayable state: geo_variable, welfare_variable, poverty_line,
+    # weight_variable, filters [{variable, op, value}], variable_overrides,
+    # crop_columns / income_columns / livelihood_columns / livestock_columns,
+    # map_view {center, zoom}, and last_job_ids per layer.
+    state = Column(JSON, nullable=True)
+
+    last_result_job_id = Column(
+        Uuid(as_uuid=True), ForeignKey("microdata_analysis_jobs.id", ondelete="SET NULL"), nullable=True
+    )
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    owner = relationship("User", foreign_keys=[owner_id])
+    dataset = relationship("MicrodataDataset", foreign_keys=[dataset_id])
+
+    __table_args__ = (
+        Index("ix_microdata_explorer_sessions_owner", "owner_id"),
+    )

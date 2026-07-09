@@ -164,3 +164,76 @@ class AnalysisResultResponse(BaseModel):
     geojson: Optional[dict[str, Any]] = None
     interpretation_text: Optional[str] = None
     error_message: Optional[str] = None
+
+
+# ── Interactive Spatial Explorer sessions ───────────────────────────────────
+
+class ExplorerFilter(BaseModel):
+    """A single row-level filter applied to the microdata before aggregation.
+    `op` is one of: eq, ne, in, not_in, gt, gte, lt, lte, between, contains."""
+    variable: str
+    op: str = "eq"
+    value: Any = None
+
+
+class ExplorerSessionState(BaseModel):
+    """Everything needed to replay an exploration. All optional so a session
+    can be saved half-configured. Extra keys are preserved as-is."""
+    geo_variable: Optional[str] = None
+    welfare_variable: Optional[str] = None
+    poverty_line: Optional[float] = None
+    weight_variable: Optional[str] = None
+    filters: Optional[list[ExplorerFilter]] = None
+    variable_overrides: Optional[dict[str, str]] = None
+    crop_columns: Optional[list[str]] = None
+    income_columns: Optional[list[str]] = None
+    livelihood_columns: Optional[list[str]] = None
+    livestock_columns: Optional[list[str]] = None
+    geojson_boundary_file: Optional[str] = None
+    map_view: Optional[dict[str, Any]] = None
+
+    class Config:
+        extra = "allow"
+
+
+class ExplorerSessionCreate(BaseModel):
+    name: Optional[str] = "Untitled exploration"
+    dataset_id: Optional[UUID] = None
+    country_iso3: Optional[str] = None
+    admin_level: Optional[str] = None
+    active_layer: Optional[str] = "poverty"
+    state: Optional[dict[str, Any]] = None
+
+
+class ExplorerSessionUpdate(BaseModel):
+    name: Optional[str] = None
+    dataset_id: Optional[UUID] = None
+    country_iso3: Optional[str] = None
+    admin_level: Optional[str] = None
+    active_layer: Optional[str] = None
+    state: Optional[dict[str, Any]] = None
+
+
+class ExplorerSessionResponse(BaseModel):
+    id: UUID
+    name: str
+    owner_id: UUID
+    dataset_id: Optional[UUID] = None
+    country_iso3: Optional[str] = None
+    admin_level: Optional[str] = None
+    active_layer: str
+    state: Optional[dict[str, Any]] = None
+    last_result_job_id: Optional[UUID] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ExplorerRunRequest(BaseModel):
+    """Optional per-run overrides. If omitted, the session's saved active_layer
+    and state are used. Providing values here also persists them to the session
+    (so the map view and last run stay in sync for replay)."""
+    active_layer: Optional[str] = None
+    state: Optional[dict[str, Any]] = None
