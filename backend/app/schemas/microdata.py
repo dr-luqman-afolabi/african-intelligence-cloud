@@ -237,3 +237,36 @@ class ExplorerRunRequest(BaseModel):
     (so the map view and last run stay in sync for replay)."""
     active_layer: Optional[str] = None
     state: Optional[dict[str, Any]] = None
+
+
+# ── AI Policy Brief ─────────────────────────────────────────────────────────
+
+class PolicyBriefRequest(BaseModel):
+    job_id: UUID
+    title: Optional[str] = None
+    audience: Optional[str] = "policymakers"
+    questions: Optional[list[str]] = None  # if omitted, sensible defaults are generated
+
+
+class PolicyBriefQA(BaseModel):
+    question: str
+    answer: str
+
+
+class PolicyBriefSection(BaseModel):
+    heading: str
+    body: str
+
+
+class PolicyBriefResponse(BaseModel):
+    job_id: UUID
+    title: str
+    audience: str
+    domain: str
+    generated_at: str
+    summary: str
+    key_findings: list[str]
+    recommendations: list[str]
+    qa: list[PolicyBriefQA]
+    sections: list[PolicyBriefSection]
+    markdown: str

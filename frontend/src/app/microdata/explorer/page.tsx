@@ -18,6 +18,7 @@ import {
   type AnalysisResultResponse,
 } from "@/lib/api";
 import DatasetGallery from "@/components/microdata/DatasetGallery";
+import AIPolicyBriefPanel from "@/components/microdata/AIPolicyBriefPanel";
 
 const ChoroplethMap = dynamic(() => import("@/components/microdata/ChoroplethMap"), {
   ssr: false,
@@ -370,6 +371,10 @@ export default function SpatialExplorerPage() {
             <div className="rounded-xl bg-slate-50 border border-slate-200 p-4 text-sm text-slate-700 leading-relaxed">
               {result.interpretation_text}
             </div>
+          )}
+
+          {result?.job_id && (
+            <AIPolicyBriefPanel jobId={result.job_id} defaultTitle={`Policy Brief — ${sessionName}`} />
           )}
         </div>
       </div>

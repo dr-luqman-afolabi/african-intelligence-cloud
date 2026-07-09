@@ -887,3 +887,41 @@ export async function fetchExplorerSessionResult(sessionId: string): Promise<Ana
   const { data } = await api.get<AnalysisResultResponse>(`/microdata/sessions/${sessionId}/result`);
   return data;
 }
+
+// ── AI Policy Brief ─────────────────────────────────────────────────────────
+
+export interface PolicyBriefQA {
+  question: string;
+  answer: string;
+}
+
+export interface PolicyBriefSection {
+  heading: string;
+  body: string;
+}
+
+export interface PolicyBrief {
+  job_id: string;
+  title: string;
+  audience: string;
+  domain: string;
+  generated_at: string;
+  summary: string;
+  key_findings: string[];
+  recommendations: string[];
+  qa: PolicyBriefQA[];
+  sections: PolicyBriefSection[];
+  markdown: string;
+}
+
+export interface PolicyBriefRequest {
+  job_id: string;
+  title?: string;
+  audience?: string;
+  questions?: string[];
+}
+
+export async function generatePolicyBrief(payload: PolicyBriefRequest): Promise<PolicyBrief> {
+  const { data } = await api.post<PolicyBrief>("/microdata/policy-brief", payload);
+  return data;
+}
