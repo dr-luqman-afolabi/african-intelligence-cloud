@@ -165,11 +165,12 @@ function SpatialResultsInner() {
               <h2 className="text-xl font-semibold text-aic-dark mb-4">Interpretation</h2>
               <p className="text-aic-dark whitespace-pre-line">{result.interpretation_text}</p>
             </section>
+          )}
+
           {result.job_id && (
             <section className="mb-10">
               <AIPolicyBriefPanel jobId={result.job_id} defaultTitle={`Policy Brief — Spatial analysis`} />
             </section>
-          )}
           )}
         </>
       )}
