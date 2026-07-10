@@ -6,24 +6,49 @@ import clsx from "clsx";
 import Logo from "@/components/ui/Logo";
 import { fetchCurrentUser } from "@/lib/api";
 
-const NAV_LINKS = [
+type NavLink = { href: string; label: string };
+type NavGroup = { label: string; items: NavLink[] };
+type NavEntry = NavLink | NavGroup;
+
+const NAV: NavEntry[] = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/microdata", label: "Microdata Studio" },
-  { href: "/microdata/intelligence", label: "AIC Intelligence" },
-  { href: "/microdata/indicators", label: "Ag Indicators" },
-  { href: "/microdata/explorer", label: "Spatial Explorer" },
+  {
+    label: "Analyze",
+    items: [
+      { href: "/microdata", label: "Microdata Studio" },
+      { href: "/microdata/intelligence", label: "AIC Intelligence" },
+      { href: "/microdata/indicators", label: "Ag Indicators" },
+      { href: "/microdata/explorer", label: "Spatial Explorer" },
+    ],
+  },
+  {
+    label: "Data",
+    items: [
+      { href: "/datasets", label: "Datasets" },
+      { href: "/surveys", label: "Survey Catalog" },
+      { href: "/connectors", label: "Connectors" },
+    ],
+  },
   { href: "/research", label: "AI Research" },
-  { href: "/datasets", label: "Datasets" },
-  { href: "/surveys", label: "Survey Catalog" },
-  { href: "/connectors", label: "Connectors" },
   { href: "/sdg", label: "SDG" },
   { href: "/search", label: "Search" },
   { href: "/about", label: "About" },
 ];
 
-const ADMIN_ROLES = new Set(["super_admin", "org_admin"]);
+function isGroup(entry: NavEntry): entry is NavGroup {
+  return (entry as NavGroup).items !== undefined;
+}
 
+const ADMIN_ROLES = new Set(["super_admin", "org_admin"]);
 const API_DOCS_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/docs`;
+
+function Chevron() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="opacity-70">
+      <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -51,13 +76,22 @@ export default function Navbar() {
       .catch(() => {});
   }, []);
 
+  const linkActive = (href: string) => (href === "/" ? pathname === "/" : pathname?.startsWith(href));
+  const groupActive = (g: NavGroup) => g.items.some((i) => pathname?.startsWith(i.href));
+
+  const desktopLinkClass = (active: boolean) =>
+    clsx(
+      "rounded-lg px-3 py-2 text-sm font-medium transition",
+      active ? "bg-white/10 text-white" : "text-slate-300 hover:bg-white/5 hover:text-white",
+    );
+
   return (
     <nav
       className={clsx(
         "sticky top-0 z-50 transition-all",
         scrolled
           ? "bg-aic-dark/95 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-aic-dark/80"
-          : "bg-aic-dark"
+          : "bg-aic-dark",
       )}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6">
@@ -66,21 +100,36 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden items-center gap-1 lg:flex">
-          {NAV_LINKS.map(({ href, label }) => {
-            const active = href === "/" ? pathname === "/" : pathname?.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={clsx(
-                  "rounded-lg px-3 py-2 text-sm font-medium transition",
-                  active ? "bg-white/10 text-white" : "text-slate-300 hover:bg-white/5 hover:text-white"
-                )}
-              >
-                {label}
+          {NAV.map((entry) =>
+            isGroup(entry) ? (
+              <div key={entry.label} className="relative group">
+                <button type="button" className={clsx(desktopLinkClass(groupActive(entry)), "inline-flex items-center gap-1")}>
+                  {entry.label}
+                  <Chevron />
+                </button>
+                <div className="absolute left-0 top-full hidden pt-2 group-hover:block">
+                  <div className="min-w-[210px] overflow-hidden rounded-xl border border-white/10 bg-aic-dark py-1 shadow-xl">
+                    {entry.items.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={clsx(
+                          "block px-4 py-2.5 text-sm transition",
+                          linkActive(item.href) ? "bg-white/10 text-white" : "text-slate-300 hover:bg-white/5 hover:text-white",
+                        )}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <Link key={entry.href} href={entry.href} className={desktopLinkClass(!!linkActive(entry.href))}>
+                {entry.label}
               </Link>
-            );
-          })}
+            ),
+          )}
           {isAdmin && (
             <Link
               href="/admin/users"
@@ -88,7 +137,7 @@ export default function Navbar() {
                 "rounded-lg px-3 py-2 text-sm font-medium transition",
                 pathname?.startsWith("/admin")
                   ? "bg-amber-500/20 text-amber-300"
-                  : "text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+                  : "text-amber-400 hover:bg-amber-500/10 hover:text-amber-300",
               )}
             >
               Admin
@@ -133,29 +182,44 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="border-t border-white/10 bg-aic-dark px-4 pb-4 pt-2 lg:hidden animate-fade-in">
           <div className="flex flex-col gap-0.5">
-            {NAV_LINKS.map(({ href, label }) => {
-              const active = pathname?.startsWith(href);
-              return (
+            {NAV.map((entry) =>
+              isGroup(entry) ? (
+                <div key={entry.label} className="pt-2">
+                  <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">{entry.label}</p>
+                  {entry.items.map((item) => (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={clsx(
+                        "rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                        pathname?.startsWith(item.href) ? "bg-white/10 text-white" : "text-slate-300 hover:bg-white/5 hover:text-white",
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
                 <Link
-                  key={href}
-                  href={href}
+                  key={entry.href}
+                  href={entry.href}
                   className={clsx(
                     "rounded-lg px-3 py-2.5 text-sm font-medium transition",
-                    active ? "bg-white/10 text-white" : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    pathname?.startsWith(entry.href) ? "bg-white/10 text-white" : "text-slate-300 hover:bg-white/5 hover:text-white",
                   )}
                 >
-                  {label}
+                  {entry.label}
                 </Link>
-              );
-            })}
+              ),
+            )}
             {isAdmin && (
               <Link
                 href="/admin/users"
                 className={clsx(
-                  "rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                  "mt-2 rounded-lg px-3 py-2.5 text-sm font-medium transition",
                   pathname?.startsWith("/admin")
                     ? "bg-amber-500/20 text-amber-300"
-                    : "text-amber-400 hover:bg-amber-500/10 hover:text-amber-300"
+                    : "text-amber-400 hover:bg-amber-500/10 hover:text-amber-300",
                 )}
               >
                 Admin
@@ -165,7 +229,7 @@ export default function Navbar() {
               href={API_DOCS_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+              className="mt-2 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
             >
               API Docs
             </a>
