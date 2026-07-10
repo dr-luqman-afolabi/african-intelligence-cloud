@@ -925,3 +925,70 @@ export async function generatePolicyBrief(payload: PolicyBriefRequest): Promise<
   const { data } = await api.post<PolicyBrief>("/microdata/policy-brief", payload);
   return data;
 }
+
+// ── AIC Intelligence: conversational, automated analysis ────────────────────
+
+export interface IntelligenceCleaningStep {
+  kind: string;
+  label: string;
+  columns?: string[];
+  column?: string;
+  strategy?: string;
+  lower?: number;
+  upper?: number;
+  op?: string;
+  value?: number;
+}
+
+export interface IntelligencePlan {
+  analysis: string;
+  analysis_label: string;
+  endpoint: string;
+  parameters: Record<string, unknown>;
+  cleaning_steps: IntelligenceCleaningStep[];
+  rationale: string;
+  warnings: string[];
+  engine: string;
+  needs_clarification: boolean;
+  clarification?: string | null;
+}
+
+export interface IntelligenceCleanResponse {
+  cleaned_dataset_id: string;
+  cleaned_dataset_name: string;
+  report: string[];
+  row_count: number;
+  column_count: number;
+}
+
+export async function planIntelligence(datasetId: string, question: string): Promise<IntelligencePlan> {
+  const { data } = await api.post<IntelligencePlan>("/intelligence/plan", {
+    dataset_id: datasetId,
+    question,
+  });
+  return data;
+}
+
+export async function cleanIntelligence(
+  datasetId: string,
+  cleaningSteps: IntelligenceCleaningStep[],
+): Promise<IntelligenceCleanResponse> {
+  const { data } = await api.post<IntelligenceCleanResponse>("/intelligence/clean", {
+    dataset_id: datasetId,
+    cleaning_steps: cleaningSteps,
+  });
+  return data;
+}
+
+// Generic runner so all six analyses (plain + spatial) work uniformly.
+export async function runIntelligenceAnalysis(
+  endpoint: string,
+  datasetId: string,
+  parameters: Record<string, unknown>,
+): Promise<AnalysisResultResponse> {
+  const { data } = await api.post<AnalysisResultResponse>(`/microdata/analyze/${endpoint}`, {
+    dataset_id: datasetId,
+    ...parameters,
+  });
+  return data;
+}

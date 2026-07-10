@@ -34,3 +34,7 @@ libpysal==4.9.2
 esda==2.5.1
 statsmodels==0.14.2
 scikit-learn==1.4.2
+
+# Optional: powers AIC Intelligence natural-language planning via Vertex AI Gemini.
+# Falls back to a heuristic planner if absent or the API is not enabled.
+google-cloud-aiplatform==1.60.0
