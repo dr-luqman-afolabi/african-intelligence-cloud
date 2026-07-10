@@ -17,6 +17,7 @@ const PUBLIC_PATHS = [
   "/docs",
   "/search",
   "/surveys",
+  "/microdata/indicators",
   "/health",
 ];
 const PUBLIC_PREFIXES = ["/research"];
