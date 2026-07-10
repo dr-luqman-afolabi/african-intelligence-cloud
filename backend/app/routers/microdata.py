@@ -74,6 +74,7 @@ from app.services.spatial_analysis_service import (
     merge_stats_with_geojson,
 )
 from app.services.spatial_boundary_service import get_boundaries_geojson
+from app.services.boundary_provider_service import fetch_admin_boundaries
 from app.services.variable_mapping_service import get_mappings_dict, save_mappings, suggest_mappings
 
 logger = logging.getLogger(__name__)
@@ -375,17 +376,7 @@ def analyze_spatial_poverty(
             df, payload.geo_variable, payload.welfare_variable, payload.poverty_line, payload.weight_variable
         )
 
-        geojson_data = None
-        if payload.geojson_boundary_file:
-            try:
-                geojson_data = json.loads(payload.geojson_boundary_file)
-            except (json.JSONDecodeError, TypeError) as exc:
-                logger.warning("Could not parse geojson_boundary_file: %s", exc)
-        elif payload.country_iso3 and payload.admin_level:
-            try:
-                geojson_data = get_boundaries_geojson(db, payload.country_iso3, payload.admin_level)
-            except HTTPException as exc:
-                logger.warning("No persisted boundaries for %s/%s: %s", payload.country_iso3, payload.admin_level, exc.detail)
+        geojson_data = _resolve_boundary_geojson(db, payload, dataset)
 
         merged_geojson = (
             merge_poverty_with_geojson(geojson_data, poverty_by_geo, payload.geo_variable) if geojson_data else None
@@ -596,19 +587,25 @@ def analyze_diversification(
         raise HTTPException(status_code=422, detail=f"Diversification analysis failed: {exc}")
 
 
-def _resolve_boundary_geojson(db, payload) -> dict | None:
+def _resolve_boundary_geojson(db, payload, dataset=None) -> dict | None:
+    """Resolve boundary GeoJSON for a spatial analysis, in order of preference:
+    inline file -> user-uploaded boundaries -> automatic openly-licensed
+    boundaries (geoBoundaries). The last step means the choropleth renders on
+    its own; iso3 comes from the request or, failing that, the dataset."""
     if payload.geojson_boundary_file:
         try:
             return json.loads(payload.geojson_boundary_file)
         except (json.JSONDecodeError, TypeError) as exc:
             logger.warning("Could not parse geojson_boundary_file: %s", exc)
-            return None
     if payload.country_iso3 and payload.admin_level:
         try:
-            return get_boundaries_geojson(db, payload.country_iso3, payload.admin_level)
+            geo = get_boundaries_geojson(db, payload.country_iso3, payload.admin_level)
+            if geo and geo.get("features"):
+                return geo
         except HTTPException as exc:
             logger.warning("No persisted boundaries for %s/%s: %s", payload.country_iso3, payload.admin_level, exc.detail)
-    return None
+    iso3 = payload.country_iso3 or (dataset.country_iso3 if dataset is not None else None)
+    return fetch_admin_boundaries(iso3, getattr(payload, "admin_level", None))
 
 
 @router.post("/analyze/spatial-agriculture", response_model=AnalysisResultResponse)
@@ -644,7 +641,7 @@ def analyze_spatial_agriculture(
 
         stats_by_geo = compute_spatial_agriculture(df, mapping, payload.geo_variable, payload.weight_variable)
 
-        geojson_data = _resolve_boundary_geojson(db, payload)
+        geojson_data = _resolve_boundary_geojson(db, payload, dataset)
         merged_geojson = (
             merge_stats_with_geojson(geojson_data, stats_by_geo, payload.geo_variable, rank_field="crop_yield")
             if geojson_data else None
@@ -716,7 +713,7 @@ def analyze_spatial_diversification(
             payload.livelihood_columns, payload.livestock_columns, payload.weight_variable,
         )
 
-        geojson_data = _resolve_boundary_geojson(db, payload)
+        geojson_data = _resolve_boundary_geojson(db, payload, dataset)
         merged_geojson = (
             merge_stats_with_geojson(geojson_data, stats_by_geo, payload.geo_variable, rank_field="crop_simpson_index")
             if geojson_data else None
