@@ -10,6 +10,7 @@ const NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/microdata", label: "Microdata Studio" },
   { href: "/microdata/intelligence", label: "AIC Intelligence" },
+  { href: "/microdata/indicators", label: "Ag Indicators" },
   { href: "/microdata/explorer", label: "Spatial Explorer" },
   { href: "/research", label: "AI Research" },
   { href: "/datasets", label: "Datasets" },

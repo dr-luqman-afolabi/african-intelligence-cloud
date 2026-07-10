@@ -992,3 +992,62 @@ export async function runIntelligenceAnalysis(
   });
   return data;
 }
+
+// ── EPAR Agricultural Development Indicators (open LSMS-ISA estimates) ────────
+
+export interface EparMeta {
+  loaded: boolean;
+  countries: string[];
+  categories: string[];
+  indicators_by_category: Record<string, string[]>;
+  gender: string[];
+  farmsize: string[];
+  commodity: string[];
+  rural: string[];
+  row_count?: number;
+}
+
+export interface EparSeriesPoint {
+  x: string;
+  wave: string;
+  year: string;
+  value: number;
+  n: number | null;
+}
+
+export interface EparSeries {
+  label: string;
+  country: string;
+  indicator: string;
+  units: string;
+  points: EparSeriesPoint[];
+}
+
+export interface EparSeriesResponse {
+  series: EparSeries[];
+  loaded: boolean;
+}
+
+export async function fetchEparMeta(): Promise<EparMeta> {
+  const { data } = await api.get<EparMeta>("/epar/meta");
+  return data;
+}
+
+export async function fetchEparSeries(params: {
+  countries: string[];
+  indicators: string[];
+  gender?: string;
+  farmsize?: string;
+  commodity?: string;
+  rural?: string;
+}): Promise<EparSeriesResponse> {
+  const qs = new URLSearchParams();
+  params.countries.forEach((c) => qs.append("countries", c));
+  params.indicators.forEach((i) => qs.append("indicators", i));
+  if (params.gender) qs.append("gender", params.gender);
+  if (params.farmsize) qs.append("farmsize", params.farmsize);
+  if (params.commodity) qs.append("commodity", params.commodity);
+  if (params.rural) qs.append("rural", params.rural);
+  const { data } = await api.get<EparSeriesResponse>(`/epar/series?${qs.toString()}`);
+  return data;
+}
