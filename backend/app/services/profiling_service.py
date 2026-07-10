@@ -30,6 +30,8 @@ def load_dataframe(storage_path: str, extension: str) -> pd.DataFrame:
         return pd.read_json(path)
     if ext == "parquet":
         return pd.read_parquet(path)
+    if ext == "dta":
+        return pd.read_stata(path, convert_categoricals=False)
     raise ValueError(f"Cannot profile file with extension '.{ext}'")
 
 

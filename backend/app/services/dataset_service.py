@@ -9,7 +9,7 @@ from app.database import SessionLocal
 from app.models.dataset import UploadedDataset, DatasetColumn, DatasetProfile, DatasetStatus, AnalysisJob
 from app.models.audit_log import AuditLog
 from app.models.user import User
-from app.services.storage_service import validate_file, save_upload, delete_upload, get_file_extension
+from app.services.storage_service import validate_file, save_upload, delete_upload, get_file_extension, extract_tabular_file_from_zip
 from app.services.profiling_service import run_profiling
 
 logger = logging.getLogger(__name__)
@@ -40,6 +40,15 @@ async def upload_dataset(
 ) -> UploadedDataset:
     """Validate, store, and persist a new dataset record."""
     from app.models.dataset import DatasetPrivacy
+
+    # If a .zip archive was uploaded, extract the first supported tabular file
+    # and continue as if that inner file had been uploaded directly.
+    if get_file_extension(file.filename or "") == "zip":
+        import io as _io
+        from starlette.datastructures import UploadFile as _UploadFile
+        _content = await file.read()
+        _bytes, _ext, _inner = extract_tabular_file_from_zip(_content)
+        file = _UploadFile(file=_io.BytesIO(_bytes), filename=_inner, size=len(_bytes))
 
     # Validate extension and size limits before reading
     validate_file(file, max_size_bytes=0)  # size checked inside save_upload

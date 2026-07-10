@@ -64,8 +64,7 @@ def _validate_dataset(db: Session, dataset_id, current_user) -> None:
     dataset = db.query(MicrodataDataset).filter(MicrodataDataset.id == dataset_id).first()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
-    if dataset.uploaded_by != current_user.id:
-        raise HTTPException(status_code=403, detail="You do not have access to this dataset")
+    # Shared catalog: any authenticated user may load any stored dataset into a session.
 
 
 @router.post("", response_model=ExplorerSessionResponse, status_code=201)

@@ -13,7 +13,21 @@ export const metadata: Metadata = {
     template: "%s | African Intelligence Cloud",
   },
   description:
-    "Macroeconomic data, analytics, and policy intelligence for Africa. Explore World Bank indicators, SDG progress, and AI-enhanced research across African countries.",
+    "Africa's data and policy intelligence platform: LSMS & household-survey microdata, poverty and inequality analysis, agricultural productivity, spatial poverty maps, World Bank & DHS indicators, SDG tracking, and AI-generated policy briefs across all 54 African countries.",
+  applicationName: "African Intelligence Cloud",
+  category: "Data & Analytics",
+  keywords: [
+    "Africa data", "African economic data", "LSMS microdata", "household survey Africa",
+    "poverty analysis Africa", "inequality Gini Africa", "agricultural productivity Africa",
+    "spatial poverty maps", "GIS poverty Africa", "DHS data", "World Bank indicators Africa",
+    "SDG Africa", "policy brief Africa", "Nigeria data", "Kenya data", "Ethiopia data",
+    "Tanzania data", "Uganda data", "Ghana data", "Rwanda data", "South Africa data",
+    "African development statistics", "microdata analytics", "poverty headcount", "food security Africa",
+  ],
+  authors: [{ name: "African Intelligence Cloud" }],
+  creator: "African Intelligence Cloud",
+  publisher: "African Intelligence Cloud",
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
   openGraph: {
     title: "African Intelligence Cloud",
     description: "Macroeconomic data, analytics, and policy intelligence for Africa.",
@@ -29,6 +43,19 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: "/",
+    languages: {
+      "en": "/",
+      "en-NG": "/", "en-KE": "/", "en-ZA": "/", "en-GH": "/",
+      "en-UG": "/", "en-TZ": "/", "en-RW": "/", "en-ET": "/",
+      "fr": "/", "x-default": "/",
+    },
+  },
+  other: {
+    "geo.region": "Africa",
+    "geo.placename": "Africa",
+    "distribution": "global",
+    "coverage": "Africa",
+    "target": "all",
   },
 };
 
@@ -42,7 +69,18 @@ const JSON_LD = {
       name: "African Intelligence Cloud",
       url: SITE_URL,
       description:
-        "Macroeconomic data, analytics, and policy intelligence platform for all 54 African countries.",
+        "Data, analytics and policy-intelligence platform for all 54 African countries — LSMS microdata, poverty & agriculture analytics, spatial poverty maps, and AI policy briefs.",
+      areaServed: { "@type": "Place", name: "Africa" },
+      knowsAbout: ["Poverty analysis", "LSMS microdata", "Agricultural productivity", "Spatial poverty mapping", "SDG indicators", "African economic development"],
+    },
+    {
+      "@type": "DataCatalog",
+      name: "African Intelligence Cloud Data Catalog",
+      url: `${SITE_URL}/datasets`,
+      description:
+        "Catalog of LSMS/household-survey microdata, macroeconomic indicators and derived poverty, inequality, agriculture and diversification analytics for African countries.",
+      spatialCoverage: { "@type": "Place", name: "Africa" },
+      keywords: "LSMS, household survey, poverty, inequality, agriculture, DHS, MICS, Afrobarometer, SDG, Africa",
     },
     {
       "@type": "WebSite",

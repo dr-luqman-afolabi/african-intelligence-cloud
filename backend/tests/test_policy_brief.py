@@ -72,7 +72,8 @@ def test_policy_brief_endpoint_from_poverty_job(client):
     assert "markdown" in body and body["markdown"]
 
 
-def test_policy_brief_requires_ownership(client):
+def test_policy_brief_shared_catalog_access(client):
+    """Shared catalog: a second authenticated user can generate a brief from any stored analysis."""
     owner = _auth_headers(client, "pb_owner@aic.africa")
     other = _auth_headers(client, "pb_other@aic.africa")
     up = client.post("/api/v1/microdata/upload", data={"name": "PB DS2"}, files=[_csv_file()], headers=owner)
@@ -84,4 +85,5 @@ def test_policy_brief_requires_ownership(client):
     )
     job_id = analyze.json()["job_id"]
     resp = client.post("/api/v1/microdata/policy-brief", json={"job_id": job_id}, headers=other)
-    assert resp.status_code == 403
+    assert resp.status_code == 200
+    assert resp.json()["key_findings"]

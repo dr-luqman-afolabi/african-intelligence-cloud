@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import AIPolicyBriefPanel from "@/components/microdata/AIPolicyBriefPanel";
 import { useSearchParams } from "next/navigation";
 import { runDiversificationAnalysis, type AnalysisResultResponse } from "@/lib/api";
 
@@ -97,6 +98,11 @@ function DiversificationResultsInner() {
               {result.interpretation_text || "No interpretation available."}
             </p>
           </section>
+          {result.job_id && (
+            <section className="mb-10">
+              <AIPolicyBriefPanel jobId={result.job_id} defaultTitle={`Policy Brief — Diversification analysis`} />
+            </section>
+          )}
 
           {groupBy.map((groupVar) => {
             const rows = (tables[groupVar] || []) as Record<string, unknown>[];

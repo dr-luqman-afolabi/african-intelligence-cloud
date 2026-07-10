@@ -1,4 +1,6 @@
 import os
+import io
+import zipfile
 import uuid
 import logging
 from pathlib import Path
@@ -9,11 +11,36 @@ from app.config import get_settings
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-ALLOWED_EXTENSIONS = {"csv", "xlsx", "xls", "json", "parquet"}
+ALLOWED_EXTENSIONS = {"csv", "xlsx", "xls", "json", "parquet", "dta"}
 
 
 def get_file_extension(filename: str) -> str:
     return filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+
+
+def extract_tabular_file_from_zip(content: bytes) -> tuple[bytes, str, str]:
+    """Find the first supported tabular file inside a .zip archive and return
+    (bytes, extension, filename). Picks the largest candidate so a real dataset
+    is chosen over a small companion readme/codebook. Raises ValueError if none."""
+    try:
+        with zipfile.ZipFile(io.BytesIO(content)) as zf:
+            candidates = []
+            for nm in zf.namelist():
+                if nm.endswith("/") or "__MACOSX" in nm or os.path.basename(nm).startswith("."):
+                    continue
+                e = nm.rsplit(".", 1)[-1].lower() if "." in nm else ""
+                if e in ALLOWED_EXTENSIONS:
+                    candidates.append((nm, e, zf.getinfo(nm).file_size))
+            if not candidates:
+                raise ValueError(
+                    "No supported data file (" + ", ".join(sorted(ALLOWED_EXTENSIONS))
+                    + ") found inside the ZIP archive."
+                )
+            candidates.sort(key=lambda t: t[2], reverse=True)
+            nm, e, _ = candidates[0]
+            return zf.read(nm), e, os.path.basename(nm)
+    except zipfile.BadZipFile as exc:
+        raise ValueError(f"Uploaded file is not a valid ZIP archive: {exc}")
 
 
 def validate_file(file: UploadFile, max_size_bytes: int) -> None:

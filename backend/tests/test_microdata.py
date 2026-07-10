@@ -192,3 +192,60 @@ def test_run_poverty_analysis_via_api(client):
     assert body["job_type"] == "poverty"
     assert "headcount" in body["summary_stats"]
     assert "region" in body["tables"]
+
+
+# -- Shared catalog + EPAR survey seed (Phase 5) ------------------------------
+
+def _register(client, email, name="U"):
+    return client.post(
+        "/api/v1/auth/register",
+        json={"email": email, "full_name": name, "password": "pass1234"},
+    ).json()
+
+
+def _login(client, email):
+    r = client.post("/api/v1/auth/login", json={"email": email, "password": "pass1234"})
+    return {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+
+def test_microdata_catalog_is_shared_across_users(client):
+    # First user is auto-verified super_admin; uploads a dataset
+    admin = _register(client, "cat_admin@aic.africa", "Admin")
+    admin_h = _login(client, "cat_admin@aic.africa")
+    up = client.post(
+        "/api/v1/microdata/upload",
+        data={"name": "Shared HH", "country_iso3": "RWA"},
+        files=[_csv_file()],
+        headers=admin_h,
+    )
+    assert up.status_code in (200, 201)
+    ds_id = up.json()["id"]
+
+    # Second user must be approved before they can log in
+    second = _register(client, "cat_user2@aic.africa", "User Two")
+    client.post(f"/api/v1/auth/approve/{second['id']}", headers=admin_h)
+    user2_h = _login(client, "cat_user2@aic.africa")
+
+    # User 2 sees the dataset uploaded by the admin (shared catalog)
+    listing = client.get("/api/v1/microdata/datasets", headers=user2_h)
+    assert listing.status_code == 200
+    assert any(it["id"] == ds_id for it in listing.json()["items"])
+
+
+def test_survey_seed_includes_epar_lsms_isa():
+    from app.services.survey_service import _SEED_SURVEYS
+    ids = {s["survey_id"] for s in _SEED_SURVEYS}
+    for expected in [
+        "lsms_isa_ethiopia_ess",
+        "lsms_isa_nigeria_ghs",
+        "lsms_isa_tanzania_nps",
+        "lsms_isa_uganda_unps",
+    ]:
+        assert expected in ids
+    epar = [s for s in _SEED_SURVEYS if "epar" in s.get("tags", [])]
+    assert len(epar) >= 8
+    # Compliance: EPAR/LSMS-ISA reference entries must require approval and
+    # must NOT be redistributable (raw microdata is license-restricted).
+    for s in epar:
+        assert s["requires_approval"] is True
+        assert s["redistribution_allowed"] is False

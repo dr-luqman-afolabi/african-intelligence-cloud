@@ -236,13 +236,13 @@ export default function MicrodataPage() {
       </section>
 
       <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 mb-10">
-        <h2 className="text-xl font-semibold text-aic-dark mb-4">Your datasets</h2>
+        <h2 className="text-xl font-semibold text-aic-dark mb-4">Available datasets</h2>
         {loadingDatasets ? (
           <p className="text-aic-muted">Loading datasets...</p>
         ) : datasetsError ? (
           <p className="text-aic-red">{datasetsError}</p>
         ) : datasets.length === 0 ? (
-          <p className="text-aic-muted">No datasets uploaded yet.</p>
+          <p className="text-aic-muted">No datasets available yet — upload one to get started.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left">

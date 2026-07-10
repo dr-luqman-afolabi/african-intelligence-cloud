@@ -42,8 +42,8 @@ def create_policy_brief(
         raise HTTPException(status_code=404, detail="Analysis job not found")
 
     dataset = db.query(MicrodataDataset).filter(MicrodataDataset.id == job.dataset_id).first()
-    if not dataset or dataset.uploaded_by != current_user.id:
-        raise HTTPException(status_code=403, detail="You do not have access to this analysis")
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset for this analysis not found")
 
     result = (
         db.query(MicrodataAnalysisResult)

@@ -326,3 +326,64 @@ def test_delete_not_found(client):
         headers=_auth(token),
     )
     assert resp.status_code == 404
+
+
+# ── Stata (.dta) and ZIP upload (Phase 5) ────────────────────────────────────
+
+def _stata_bytes():
+    import pandas as pd
+    import tempfile, os
+    df = pd.DataFrame({"consumption": [50, 800, 1200, 300], "region": ["A", "A", "B", "B"]})
+    with tempfile.NamedTemporaryFile(suffix=".dta", delete=False) as tmp:
+        path = tmp.name
+    df.to_stata(path, write_index=False)
+    with open(path, "rb") as fh:
+        data = fh.read()
+    os.remove(path)
+    return data
+
+
+def test_upload_stata(client):
+    token = _register_and_login(client, email="ds_stata@aic.africa")
+    resp = client.post(
+        "/api/v1/datasets/upload",
+        data={"name": "Stata dataset", "privacy": "private"},
+        files=[("file", ("survey.dta", io.BytesIO(_stata_bytes()), "application/octet-stream"))],
+        headers=_auth(token),
+    )
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["file_extension"] == "dta"
+
+
+def test_upload_zip_extracts_tabular(client):
+    import zipfile
+    token = _register_and_login(client, email="ds_zip@aic.africa")
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("readme.txt", "ignore me")
+        zf.writestr("household.csv", "a,b,c\n1,2,3\n4,5,6\n")
+    buf.seek(0)
+    resp = client.post(
+        "/api/v1/datasets/upload",
+        data={"name": "Zipped dataset", "privacy": "private"},
+        files=[("file", ("bundle.zip", buf, "application/zip"))],
+        headers=_auth(token),
+    )
+    assert resp.status_code == 201, resp.text
+    assert resp.json()["file_extension"] == "csv"
+
+
+def test_upload_zip_without_supported_file_rejected(client):
+    import zipfile
+    token = _register_and_login(client, email="ds_zipbad@aic.africa")
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("notes.txt", "no data here")
+    buf.seek(0)
+    resp = client.post(
+        "/api/v1/datasets/upload",
+        data={"name": "Bad zip", "privacy": "private"},
+        files=[("file", ("bundle.zip", buf, "application/zip"))],
+        headers=_auth(token),
+    )
+    assert resp.status_code == 422

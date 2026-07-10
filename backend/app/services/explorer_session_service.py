@@ -155,8 +155,7 @@ def run_session_layer(
     dataset = db.query(MicrodataDataset).filter(MicrodataDataset.id == session.dataset_id).first()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
-    if dataset.uploaded_by != current_user.id:
-        raise HTTPException(status_code=403, detail="You do not have access to this dataset")
+    # Shared catalog: any authenticated user may load any stored dataset into a session.
 
     layer = coerce_layer(session.active_layer)
     state: dict = dict(session.state or {})

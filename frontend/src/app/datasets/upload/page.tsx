@@ -4,7 +4,7 @@ import { useRef, useState, DragEvent, ChangeEvent } from "react";
 import { useRouter } from "next/navigation";
 import { uploadDataset } from "@/lib/api";
 
-const ALLOWED_EXTENSIONS = ["csv", "xlsx", "xls", "json", "parquet"];
+const ALLOWED_EXTENSIONS = ["csv", "xlsx", "xls", "json", "parquet", "dta", "zip"];
 const MAX_MB = 50;
 
 function getExtension(filename: string) {

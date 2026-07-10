@@ -92,8 +92,7 @@ def _get_owned_dataset(db: Session, dataset_id: UUID, current_user) -> Microdata
     dataset = db.query(MicrodataDataset).filter(MicrodataDataset.id == dataset_id).first()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
-    if dataset.uploaded_by != current_user.id:
-        raise HTTPException(status_code=403, detail="You do not have access to this dataset")
+    # Shared catalog: any authenticated user may read/analyze stored datasets.
     return dataset
 
 
@@ -188,7 +187,8 @@ def list_microdata_datasets(
     db: Session = Depends(get_db),
     current_user=Depends(_get_user),
 ):
-    query = db.query(MicrodataDataset).filter(MicrodataDataset.uploaded_by == current_user.id)
+    # Shared catalog: show all uploaded/cleaned/stored datasets to every authenticated user
+    query = db.query(MicrodataDataset)
     total = query.count()
     items = query.order_by(MicrodataDataset.created_at.desc()).offset(skip).limit(limit).all()
     return {"items": items, "total": total}
@@ -768,8 +768,8 @@ def ai_interpret(
     if not job:
         raise HTTPException(status_code=404, detail="Analysis job not found")
     dataset = db.query(MicrodataDataset).filter(MicrodataDataset.id == job.dataset_id).first()
-    if not dataset or dataset.uploaded_by != current_user.id:
-        raise HTTPException(status_code=403, detail="You do not have access to this analysis")
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset for this analysis not found")
 
     result = (
         db.query(MicrodataAnalysisResult)
@@ -806,8 +806,8 @@ def get_analysis_job(
         raise HTTPException(status_code=404, detail="Analysis job not found")
 
     dataset = db.query(MicrodataDataset).filter(MicrodataDataset.id == job.dataset_id).first()
-    if not dataset or dataset.uploaded_by != current_user.id:
-        raise HTTPException(status_code=403, detail="You do not have access to this analysis")
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset for this analysis not found")
 
     result = (
         db.query(MicrodataAnalysisResult)

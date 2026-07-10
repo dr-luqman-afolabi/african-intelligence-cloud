@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState } from "react";
+import AIPolicyBriefPanel from "@/components/microdata/AIPolicyBriefPanel";
 import { useSearchParams } from "next/navigation";
 import { runPovertyAnalysis, type AnalysisResultResponse } from "@/lib/api";
 
@@ -97,6 +98,11 @@ function PovertyResultsInner() {
               {result.interpretation_text || "No interpretation available."}
             </p>
           </section>
+          {result.job_id && (
+            <section className="mb-10">
+              <AIPolicyBriefPanel jobId={result.job_id} defaultTitle={`Policy Brief — Poverty analysis`} />
+            </section>
+          )}
 
           <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 mb-10">
             <h2 className="text-xl font-semibold text-aic-dark mb-4">Summary</h2>
