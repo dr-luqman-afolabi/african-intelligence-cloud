@@ -12,6 +12,7 @@ const ROUTES = [
   "/sdg",
   "/surveys",
   "/microdata/indicators",
+  "/harveststat",
   "/health",
   "/search",
   "/research",

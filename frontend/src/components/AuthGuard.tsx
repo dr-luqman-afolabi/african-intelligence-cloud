@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
   "/search",
   "/surveys",
   "/microdata/indicators",
+  "/harveststat",
   "/health",
 ];
 const PUBLIC_PREFIXES = ["/research"];

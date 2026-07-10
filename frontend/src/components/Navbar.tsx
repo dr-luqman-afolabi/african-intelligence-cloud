@@ -26,6 +26,7 @@ const NAV: NavEntry[] = [
     items: [
       { href: "/datasets", label: "Datasets" },
       { href: "/surveys", label: "Survey Catalog" },
+      { href: "/harveststat", label: "Crop Statistics" },
       { href: "/connectors", label: "Connectors" },
     ],
   },

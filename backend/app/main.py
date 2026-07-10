@@ -30,6 +30,7 @@ from app.routers.microdata_explorer import router as microdata_explorer_router
 from app.routers.policy_brief import router as policy_brief_router
 from app.routers.aic_intelligence import router as aic_intelligence_router
 from app.routers.epar_indicators import router as epar_indicators_router
+from app.routers.harveststat import router as harveststat_router
 from app.routers.spatial import router as spatial_router
 import app.connectors.tier1 # noqa: F401 — triggers all register_connector() calls
 import app.connectors.tier2 # noqa: F401 — triggers all tier2 register_connector() calls
@@ -165,6 +166,7 @@ app.include_router(microdata_explorer_router, prefix="/api/v1")
 app.include_router(policy_brief_router, prefix="/api/v1")
 app.include_router(aic_intelligence_router, prefix="/api/v1")
 app.include_router(epar_indicators_router, prefix="/api/v1")
+app.include_router(harveststat_router, prefix="/api/v1")
 app.include_router(spatial_router, prefix="/api/v1")
 
 @app.get("/health", tags=["Health"])

@@ -1051,3 +1051,54 @@ export async function fetchEparSeries(params: {
   const { data } = await api.get<EparSeriesResponse>(`/epar/series?${qs.toString()}`);
   return data;
 }
+
+// ── HarvestStat-Africa: harmonized subnational crop statistics ───────────────
+
+export interface HarvestStatMeta {
+  loaded: boolean;
+  countries: string[];
+  crops: string[];
+  crops_by_country: Record<string, string[]>;
+  seasons: string[];
+  metrics: Record<string, string>;
+  year_min: number | null;
+  year_max: number | null;
+  row_count?: number;
+}
+
+export interface HarvestStatSeries {
+  label: string;
+  country: string;
+  crop: string;
+  units: string;
+  points: { x: string; year: number; value: number }[];
+}
+
+export interface HarvestStatSeriesResponse {
+  series: HarvestStatSeries[];
+  metric: string;
+  units?: string;
+  loaded: boolean;
+}
+
+export async function fetchHarvestStatMeta(): Promise<HarvestStatMeta> {
+  const { data } = await api.get<HarvestStatMeta>("/harveststat/meta");
+  return data;
+}
+
+export async function fetchHarvestStatSeries(params: {
+  countries: string[];
+  crops: string[];
+  metric: string;
+  admin_1?: string;
+  season?: string;
+}): Promise<HarvestStatSeriesResponse> {
+  const qs = new URLSearchParams();
+  params.countries.forEach((c) => qs.append("countries", c));
+  params.crops.forEach((c) => qs.append("crops", c));
+  qs.append("metric", params.metric);
+  if (params.admin_1) qs.append("admin_1", params.admin_1);
+  if (params.season) qs.append("season", params.season);
+  const { data } = await api.get<HarvestStatSeriesResponse>(`/harveststat/series?${qs.toString()}`);
+  return data;
+}
