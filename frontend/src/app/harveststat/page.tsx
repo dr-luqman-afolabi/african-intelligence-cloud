@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import MultiSeriesLineChart from "@/components/microdata/MultiSeriesLineChart";
+import AIInsightPanel from "@/components/insights/AIInsightPanel";
 import {
   fetchHarvestStatMeta,
   fetchHarvestStatSeries,
@@ -188,6 +189,17 @@ export default function CropStatisticsPage() {
           </div>
           <MultiSeriesLineChart series={result.series} yLabel={units} />
         </section>
+      )}
+
+      {result && result.series.length > 0 && (
+        <AIInsightPanel
+          title={`Crop ${result.metric}${units ? ` (${units})` : ""}`}
+          metric={result.metric}
+          series={result.series.map((s) => ({
+            label: s.label, country: s.country, crop: s.crop, units: s.units,
+            points: s.points.map((p) => ({ year: p.year, value: p.value })),
+          }))}
+        />
       )}
     </main>
   );

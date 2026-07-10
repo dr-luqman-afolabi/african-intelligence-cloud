@@ -1125,3 +1125,68 @@ export async function fetchHarvestStatSeries(params: {
     return data;
   });
 }
+
+// ── Forecasting + AI Insights ────────────────────────────────────────────────
+
+export interface ForecastPoint { year: number; x: string; value: number; lower: number; upper: number; }
+export interface ForecastModel { points: ForecastPoint[]; }
+export interface ForecastResponse {
+  loaded: boolean;
+  country?: string;
+  crop?: string;
+  metric?: string;
+  units?: string;
+  horizon?: number;
+  history?: { year: number; value: number }[];
+  models?: Record<string, ForecastModel>;
+  available_models?: string[];
+  reason?: string;
+  min_points?: number;
+}
+
+export async function fetchForecast(params: {
+  country: string; crop: string; metric: string; horizon: number;
+  admin_1?: string; season?: string;
+}): Promise<ForecastResponse> {
+  const qs = new URLSearchParams({
+    country: params.country, crop: params.crop, metric: params.metric,
+    horizon: String(params.horizon),
+  });
+  if (params.admin_1) qs.append("admin_1", params.admin_1);
+  if (params.season) qs.append("season", params.season);
+  return withColdStartRetry(async () => {
+    const { data } = await api.get<ForecastResponse>(`/forecast/crop?${qs.toString()}`);
+    return data;
+  });
+}
+
+export interface InsightStat {
+  label: string; units: string;
+  start_year: number; end_year: number;
+  start_value: number; end_value: number;
+  pct_change: number | null; cagr_pct: number | null;
+  peak_year: number; peak_value: number;
+  trough_year: number; trough_value: number;
+  n_points: number; direction: string;
+}
+export interface InsightResponse {
+  action: string;
+  insight: string;
+  recommendations: string[];
+  stats: InsightStat[];
+  peers?: Record<string, string[]>;
+  source: string;
+}
+
+export interface InsightSeriesInput {
+  label?: string; country?: string; crop?: string; units?: string;
+  points: { year: number; value: number | null }[];
+}
+
+export async function fetchSeriesInsight(params: {
+  action: "interpret" | "explain" | "recommend" | "compare";
+  title?: string; metric?: string; series: InsightSeriesInput[];
+}): Promise<InsightResponse> {
+  const { data } = await api.post<InsightResponse>("/insights/series", params);
+  return data;
+}
