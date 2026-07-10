@@ -13,6 +13,7 @@ const NAV_LINKS = [
   { href: "/microdata/explorer", label: "Spatial Explorer" },
   { href: "/research", label: "AI Research" },
   { href: "/datasets", label: "Datasets" },
+  { href: "/surveys", label: "Survey Catalog" },
   { href: "/connectors", label: "Connectors" },
   { href: "/sdg", label: "SDG" },
   { href: "/search", label: "Search" },
