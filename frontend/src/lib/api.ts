@@ -1081,9 +1081,30 @@ export interface HarvestStatSeriesResponse {
   loaded: boolean;
 }
 
+// The HarvestStat dataset is downloaded + parsed on the backend's first request
+// after a cold start, which can take several seconds and briefly return 503 while
+// the Cloud Run instance warms. Retry a few times so the UI waits it out.
+async function withColdStartRetry<T>(fn: () => Promise<T>, attempts = 6, delayMs = 3000): Promise<T> {
+  let lastErr: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const retryable = status === 503 || status === 502 || status === 504 || status === undefined;
+      if (!retryable || i === attempts - 1) throw err;
+      lastErr = err;
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  throw lastErr;
+}
+
 export async function fetchHarvestStatMeta(): Promise<HarvestStatMeta> {
-  const { data } = await api.get<HarvestStatMeta>("/harveststat/meta");
-  return data;
+  return withColdStartRetry(async () => {
+    const { data } = await api.get<HarvestStatMeta>("/harveststat/meta");
+    return data;
+  });
 }
 
 export async function fetchHarvestStatSeries(params: {
@@ -1099,6 +1120,8 @@ export async function fetchHarvestStatSeries(params: {
   qs.append("metric", params.metric);
   if (params.admin_1) qs.append("admin_1", params.admin_1);
   if (params.season) qs.append("season", params.season);
-  const { data } = await api.get<HarvestStatSeriesResponse>(`/harveststat/series?${qs.toString()}`);
-  return data;
+  return withColdStartRetry(async () => {
+    const { data } = await api.get<HarvestStatSeriesResponse>(`/harveststat/series?${qs.toString()}`);
+    return data;
+  });
 }
