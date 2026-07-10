@@ -13,6 +13,12 @@ def _auth_headers(client, email):
         "/api/v1/auth/register",
         json={"email": email, "full_name": "Explorer User", "password": "pass1234"},
     )
+    from app.database import SessionLocal as _SL
+    from app.models.user import User as _U
+    _d=_SL(); _u=_d.query(_U).filter(_U.email==email).first()
+    if _u:
+        _u.is_verified=True; _u.is_active=True; _d.commit()
+    _d.close()
     resp = client.post("/api/v1/auth/login", json={"email": email, "password": "pass1234"})
     return {"Authorization": f"Bearer {resp.json()['access_token']}"}
 
