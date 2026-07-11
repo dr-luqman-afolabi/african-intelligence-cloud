@@ -1187,6 +1187,8 @@ export async function fetchSeriesInsight(params: {
   action: "interpret" | "explain" | "recommend" | "compare";
   title?: string; metric?: string; series: InsightSeriesInput[];
 }): Promise<InsightResponse> {
-  const { data } = await api.post<InsightResponse>("/insights/series", params);
-  return data;
+  return withColdStartRetry(async () => {
+    const { data } = await api.post<InsightResponse>("/insights/series", params);
+    return data;
+  });
 }

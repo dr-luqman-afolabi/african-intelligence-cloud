@@ -16,6 +16,23 @@ from app.services import harveststat_service, llm_provider
 
 logger = logging.getLogger(__name__)
 
+# Vertex AI calls can block for many seconds on a cold SDK init or a slow/errored
+# backend, which starves the Cloud Run worker and produces 503s. Bound every LLM
+# call to a few seconds on a background thread; on timeout we fall back to the
+# deterministic heuristic so the endpoint always responds fast.
+_LLM_TIMEOUT_S = 6.0
+
+
+def _bounded_llm(prompt: str):
+    import concurrent.futures
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+            fut = ex.submit(llm_provider.generate_json, prompt)
+            return fut.result(timeout=_LLM_TIMEOUT_S)
+    except Exception as exc:  # TimeoutError or any LLM failure
+        logger.info("insights LLM skipped (%s); using heuristic", type(exc).__name__)
+        return None
+
 ACTIONS = ("interpret", "explain", "recommend", "compare")
 
 
@@ -125,10 +142,7 @@ def generate(payload: dict[str, Any]) -> dict[str, Any]:
         prompt = (f"{_GUARDRAIL}\n\n{facts}\n\n"
                   f"Write {detail} interpreting the trend(s). "
                   "Return {\"insight\": <text>, \"recommendations\": []}.")
-    try:
-        llm_out = llm_provider.generate_json(prompt)
-    except Exception as exc:  # pragma: no cover
-        logger.info("insights LLM failed: %s", exc)
+    llm_out = _bounded_llm(prompt)
 
     if llm_out and isinstance(llm_out.get("insight"), str) and llm_out["insight"].strip():
         insight = llm_out["insight"].strip()
