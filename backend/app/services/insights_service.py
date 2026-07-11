@@ -22,14 +22,20 @@ logger = logging.getLogger(__name__)
 # deterministic heuristic so the endpoint always responds fast.
 _LLM_TIMEOUT_S = 6.0
 
+# Persistent pool: we must NOT use a `with ThreadPoolExecutor()` block, because
+# its __exit__ calls shutdown(wait=True) and would block until the (possibly
+# slow) Vertex call finishes — defeating the timeout and starving the worker.
+# With a persistent pool we abandon the future on timeout and return at 6s.
+import concurrent.futures as _futures
+
+_LLM_POOL = _futures.ThreadPoolExecutor(max_workers=4, thread_name_prefix="insights-llm")
+
 
 def _bounded_llm(prompt: str):
-    import concurrent.futures
     try:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
-            fut = ex.submit(llm_provider.generate_json, prompt)
-            return fut.result(timeout=_LLM_TIMEOUT_S)
-    except Exception as exc:  # TimeoutError or any LLM failure
+        fut = _LLM_POOL.submit(llm_provider.generate_json, prompt)
+        return fut.result(timeout=_LLM_TIMEOUT_S)
+    except Exception as exc:  # TimeoutError or any LLM failure -> heuristic
         logger.info("insights LLM skipped (%s); using heuristic", type(exc).__name__)
         return None
 
