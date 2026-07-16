@@ -42,6 +42,18 @@ export default function Footer() {
               Macroeconomic data, microdata poverty analysis, and Africa-wide GIS mapping — policy
               intelligence for every African country.
             </p>
+            <p className="mt-3 max-w-xs text-sm text-aic-muted">
+              An initiative of{" "}
+              <a
+                href="https://hyrin.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-aic-green underline underline-offset-4"
+              >
+                H.Y.R.I.N. — Holistic Youth Resilience &amp; Innovation Network
+              </a>
+              .
+            </p>
           </div>
           {COLUMNS.map((col) => (
             <div key={col.title}>
