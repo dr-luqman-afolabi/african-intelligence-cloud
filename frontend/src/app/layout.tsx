@@ -72,6 +72,13 @@ const JSON_LD = {
         "Data, analytics and policy-intelligence platform for all 54 African countries — LSMS microdata, poverty & agriculture analytics, spatial poverty maps, and AI policy briefs.",
       areaServed: { "@type": "Place", name: "Africa" },
       knowsAbout: ["Poverty analysis", "LSMS microdata", "Agricultural productivity", "Spatial poverty mapping", "SDG indicators", "African economic development"],
+      email: "aluqman@hyrin.org",
+      founder: { "@type": "Person", name: "Dr. Luqman Afolabi" },
+      parentOrganization: {
+        "@type": "Organization",
+        name: "H.Y.R.I.N. — Holistic Youth Resilience & Innovation Network",
+        url: "https://hyrin.org",
+      },
     },
     {
       "@type": "DataCatalog",
