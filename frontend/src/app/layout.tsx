@@ -73,11 +73,25 @@ const JSON_LD = {
       areaServed: { "@type": "Place", name: "Africa" },
       knowsAbout: ["Poverty analysis", "LSMS microdata", "Agricultural productivity", "Spatial poverty mapping", "SDG indicators", "African economic development"],
       email: "aluqman@hyrin.org",
-      founder: { "@type": "Person", name: "Dr. Luqman Afolabi" },
+      sameAs: ["https://hyrin.org"],
+      founder: {
+        "@type": "Person",
+        name: "Dr. Luqman O. Afolabi",
+        jobTitle: "Founder & Director",
+        email: "aluqman@hyrin.org",
+        sameAs: ["https://hyrin.org/about.html"],
+      },
+      member: [
+        { "@type": "Person", name: "Dr. Yusuf Hammed Agboola", jobTitle: "Lead Development Economist", sameAs: ["https://hyrin.org/about.html"] },
+        { "@type": "Person", name: "Dr. Abdulmalik O. Salau", jobTitle: "Director of Financial Governance", sameAs: ["https://hyrin.org/about.html"] },
+        { "@type": "Person", name: "Azeezat Gbadamosi", jobTitle: "Public Health & Impact Monitoring", sameAs: ["https://hyrin.org/about.html"] },
+        { "@type": "Person", name: "Dr. Toluwalope Ogunro", jobTitle: "Senior Advisor, Environmental Health", sameAs: ["https://hyrin.org/about.html"] },
+      ],
       parentOrganization: {
-        "@type": "Organization",
+        "@type": "NGO",
         name: "H.Y.R.I.N. — Holistic Youth Resilience & Innovation Network",
         url: "https://hyrin.org",
+        identifier: "CAC RC 8729824",
       },
     },
     {

@@ -70,6 +70,50 @@ const AUDIENCE = [
   "Independent policy analysts",
 ];
 
+// Leadership team — sourced from the parent organization, HYRIN (Holistic Youth
+// Resilience & Innovation Network), a CAC-registered Nigerian non-profit
+// (RC 8729824). Each profile is publicly verifiable at https://hyrin.org.
+const TEAM = [
+  {
+    initials: "LA",
+    name: "Dr. Luqman O. Afolabi",
+    role: "Founder & Director",
+    credentials: "Ph.D. International Economics & Development",
+    bio: "Architect of the AIC platform and the HYRIN integrated development model. 30+ peer-reviewed publications in development economics, poverty, and applied econometrics.",
+    email: "aluqman@hyrin.org",
+  },
+  {
+    initials: "YA",
+    name: "Dr. Yusuf Hammed Agboola",
+    role: "Lead Development Economist",
+    credentials: "Ph.D. International Economics",
+    bio: "15 years of expertise in programme economics, labour-market analysis, and development finance across West Africa.",
+  },
+  {
+    initials: "AS",
+    name: "Dr. Abdulmalik O. Salau",
+    role: "Director of Financial Governance",
+    credentials: "CPA Australia · Ph.D. & MSc Accounting",
+    bio: "Oversees financial controls, audit readiness, and donor compliance to international NGO governance standards.",
+  },
+  {
+    initials: "AG",
+    name: "Azeezat Gbadamosi",
+    role: "Public Health & Impact Monitoring",
+    credentials: "M.Sc. Public Health",
+    bio: "5+ years in health programme monitoring and community-based impact evaluation across Nigerian NGO and government health systems.",
+  },
+  {
+    initials: "TO",
+    name: "Dr. Toluwalope Ogunro",
+    role: "Senior Advisor, Environmental Health",
+    credentials: "Ph.D. Environmental & Public Health",
+    bio: "Horizon 2020 researcher. Leads the green economy and climate-resilience strategy across the Oke-Ogun corridor.",
+  },
+];
+
+const HYRIN_URL = "https://hyrin.org";
+
 export default function AboutPage() {
   return (
     <div>
@@ -240,6 +284,77 @@ export default function AboutPage() {
             timely, transparent, and actionable evidence for the continent&apos;s most pressing
             challenges.
           </p>
+        </section>
+
+        {/* Leadership team */}
+        <section>
+          <p className="section-label">Our people</p>
+          <h2 className="mt-2 text-3xl font-bold text-aic-dark">Leadership Team</h2>
+          <p className="mt-3 leading-relaxed text-aic-muted">
+            AIC is delivered by a team combining rigorous academic training, international
+            development expertise, and lived experience of the communities we serve. The platform is
+            an initiative of{" "}
+            <a
+              href={HYRIN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-aic-green underline underline-offset-4"
+            >
+              HYRIN — Holistic Youth Resilience &amp; Innovation Network
+            </a>
+            , a registered Nigerian non-profit (CAC RC&nbsp;8729824). Each profile below is publicly
+            verifiable on the HYRIN website.
+          </p>
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {TEAM.map((m, i) => (
+              <div
+                key={m.name}
+                className="card animate-fade-in-up flex gap-4 p-6"
+                style={{ animationDelay: `${i * 0.05}s` }}
+              >
+                <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-aic-green text-lg font-bold text-white">
+                  {m.initials}
+                </span>
+                <div className="min-w-0">
+                  <p className="font-semibold text-aic-dark">{m.name}</p>
+                  <p className="text-sm font-medium text-aic-green">{m.role}</p>
+                  <p className="mt-0.5 text-xs uppercase tracking-wide text-slate-400">
+                    {m.credentials}
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-500">{m.bio}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                    <a
+                      href={`${HYRIN_URL}/about.html`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-medium text-aic-green hover:underline"
+                    >
+                      Verify profile on HYRIN ↗
+                    </a>
+                    {m.email && (
+                      <a href={`mailto:${m.email}`} className="text-slate-500 hover:text-aic-green">
+                        {m.email}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6 flex flex-wrap gap-3 text-sm">
+            <a
+              href={HYRIN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="badge bg-aic-green/10 text-aic-green"
+            >
+              Parent organization: hyrin.org ↗
+            </a>
+            <span className="badge bg-slate-100 text-slate-500">
+              CAC Registered NGO · RC 8729824
+            </span>
+            <span className="badge bg-slate-100 text-slate-500">Annual independent external audits</span>
+          </div>
         </section>
 
         {/* Message from the Director */}
