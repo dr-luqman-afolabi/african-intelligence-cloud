@@ -92,6 +92,12 @@ const JSON_LD = {
         name: "H.Y.R.I.N. — Holistic Youth Resilience & Innovation Network",
         url: "https://hyrin.org",
         identifier: "CAC RC 8729824",
+        sameAs: [
+          "https://www.linkedin.com/company/hyrin-ng",
+          "https://twitter.com/hyrin_ng",
+          "https://www.facebook.com/Saki.youth",
+          "https://www.instagram.com/hyrin_ng",
+        ],
       },
     },
     {

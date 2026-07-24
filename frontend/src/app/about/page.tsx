@@ -350,6 +350,22 @@ export default function AboutPage() {
             >
               Parent organization: hyrin.org ↗
             </a>
+            <a
+              href="https://www.linkedin.com/company/hyrin-ng"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="badge bg-aic-green/10 text-aic-green"
+            >
+              HYRIN on LinkedIn ↗
+            </a>
+            <a
+              href="https://twitter.com/hyrin_ng"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="badge bg-aic-green/10 text-aic-green"
+            >
+              HYRIN on X ↗
+            </a>
             <span className="badge bg-slate-100 text-slate-500">
               CAC Registered NGO · RC 8729824
             </span>
