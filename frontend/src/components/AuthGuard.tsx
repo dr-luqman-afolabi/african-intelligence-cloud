@@ -10,6 +10,9 @@ import Spinner from "@/components/ui/Spinner";
 const PUBLIC_PATHS = [
   "/",
   "/about",
+  "/contact",
+  "/privacy",
+  "/terms",
   "/login",
   "/register",
   "/dashboard",
@@ -17,12 +20,16 @@ const PUBLIC_PATHS = [
   "/docs",
   "/search",
   "/surveys",
-  "/microdata/indicators",
-  "/harveststat",
-  "/forecast",
   "/health",
+  "/connectors",
+  "/forecast",
+  "/harveststat",
 ];
-const PUBLIC_PREFIXES = ["/research"];
+// The product interface (Microdata Studio and its analysis tools) is browsable
+// so visitors — and reviewers — can see the live product. Uploads and private
+// datasets remain protected server-side: the API returns 401 without a token,
+// so the pages render their interface but load no private data when logged out.
+const PUBLIC_PREFIXES = ["/research", "/microdata"];
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true;

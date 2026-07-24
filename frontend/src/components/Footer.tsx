@@ -25,8 +25,16 @@ const COLUMNS = [
     title: "Company",
     links: [
       { href: "/about", label: "About" },
+      { href: "/contact", label: "Contact" },
       { href: "/login", label: "Sign in" },
       { href: "/register", label: "Create account" },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { href: "/privacy", label: "Privacy Policy" },
+      { href: "/terms", label: "Terms of Service" },
     ],
   },
 ];
@@ -35,7 +43,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-slate-200 bg-white">
       <div className="mx-auto max-w-7xl px-6 py-12">
-        <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-8 sm:grid-cols-5">
           <div className="col-span-2 sm:col-span-1">
             <Logo />
             <p className="mt-3 max-w-xs text-sm text-aic-muted">
@@ -53,6 +61,11 @@ export default function Footer() {
                 H.Y.R.I.N. — Holistic Youth Resilience &amp; Innovation Network
               </a>
               .
+            </p>
+            <p className="mt-4 text-sm text-aic-muted">
+              <a href="mailto:aluqman@hyrin.org" className="transition hover:text-aic-green">
+                aluqman@hyrin.org
+              </a>
             </p>
           </div>
           {COLUMNS.map((col) => (
