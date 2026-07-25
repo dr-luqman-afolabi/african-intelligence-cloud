@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.database import get_db, SessionLocal
 from app.models.country import Country
+from app.models.user import User
+from app.routers.auth import require_admin
 from app.schemas.macro_data import MacroDataResponse
 from app.services import worldbank_connector
 
@@ -37,7 +39,12 @@ def get_macro_data(
 
 
 @router.post("/sync/{iso3}", status_code=202)
-def sync_country(iso3: str, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+def sync_country(
+    iso3: str,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
     iso3 = iso3.upper()
     _require_country(iso3, db)
     background_tasks.add_task(_sync_with_own_session, iso3)

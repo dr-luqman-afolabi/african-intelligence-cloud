@@ -11,6 +11,8 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.research_paper import ResearchPaper
+from app.models.user import User
+from app.routers.auth import require_admin
 from app.services.research_source_service import list_sources, get_source
 from app.services.research_service import (
     recommend_theories,
@@ -187,7 +189,12 @@ def get_paper(paper_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/sync")
-def sync_papers(req: SyncRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+def sync_papers(
+    req: SyncRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
+):
     """Sync papers from an open source into the local database (async)."""
     source = get_source(db, req.source_id)
     if not source:

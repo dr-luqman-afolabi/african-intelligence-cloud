@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.routers.auth import require_admin
 from app.services.scheduler_service import (
     upsert_schedule,
     delete_schedule,
@@ -13,7 +14,13 @@ from app.services.scheduler_service import (
     trigger_now,
 )
 
-router = APIRouter(prefix="/schedules", tags=["Sync Scheduler"])
+# The sync scheduler is an operational control plane (create/edit/delete/trigger
+# data syncs). Every route requires an admin token — it has no public UI.
+router = APIRouter(
+    prefix="/schedules",
+    tags=["Sync Scheduler"],
+    dependencies=[Depends(require_admin)],
+)
 
 
 class ScheduleRequest(BaseModel):

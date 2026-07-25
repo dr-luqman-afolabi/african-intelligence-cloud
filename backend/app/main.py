@@ -1,12 +1,12 @@
 from contextlib import asynccontextmanager
 import asyncio
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import Base, get_db
 import app.database as _db
-from app.routers.auth import router as auth_router
+from app.routers.auth import router as auth_router, require_admin
 from app.routers.countries import router as countries_router
 from app.routers.indicators import router as indicators_router
 from app.routers.macro_data import router as macro_data_router
@@ -178,5 +178,6 @@ def health():
     return {"status": "ok", "version": settings.app_version, "service": settings.app_name}
 
 @app.get("/metrics", tags=["Ops"])
-def metrics():
+def metrics(_admin=Depends(require_admin)):
+    # Per-endpoint request/latency counters are operational internals — admin only.
     return get_metrics()

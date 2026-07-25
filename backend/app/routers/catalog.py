@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.models.user import User
+from app.routers.auth import require_admin
 from app.services.catalog_service import (
     list_catalog_entries,
     get_catalog_entry,
@@ -31,6 +33,7 @@ def push_to_datahub(
     source_id: str,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
+    _admin: User = Depends(require_admin),
 ):
     entry = get_catalog_entry(db, source_id)
     if entry is None:
