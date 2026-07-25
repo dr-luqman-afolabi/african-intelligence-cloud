@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.database import get_db, SessionLocal
 from app.models.country import Country
+from app.middleware.rate_limit import ai_rate_limit
 from app.models.user import User
 from app.routers.auth import require_admin
 from app.schemas.macro_data import MacroDataResponse
@@ -56,6 +57,7 @@ def interpret_macro_data(
     country: str = Query(..., description="ISO3 country code (e.g. NGA, RWA)"),
     indicators: str = Query(..., description="Comma-separated indicator codes"),
     db: Session = Depends(get_db),
+    _rl=Depends(ai_rate_limit),
 ):
     """Generate a data-driven narrative interpretation of one or more indicator series."""
     iso3 = country.upper()

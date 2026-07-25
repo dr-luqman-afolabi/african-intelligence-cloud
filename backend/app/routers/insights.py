@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from app.middleware.rate_limit import ai_rate_limit
 from pydantic import BaseModel, Field
 
 from app.services import insights_service
@@ -32,7 +34,7 @@ class InsightRequest(BaseModel):
 
 
 @router.post("/series")
-def series_insight(req: InsightRequest) -> dict[str, Any]:
+def series_insight(req: InsightRequest, _rl=Depends(ai_rate_limit)) -> dict[str, Any]:
     payload = {
         "action": req.action,
         "title": req.title,

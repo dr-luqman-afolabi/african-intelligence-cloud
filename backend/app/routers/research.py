@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.middleware.rate_limit import ai_rate_limit
 from app.models.research_paper import ResearchPaper
 from app.models.user import User
 from app.routers.auth import require_admin
@@ -242,7 +243,7 @@ def sync_papers(
 
 
 @router.post("/literature-review")
-def literature_review(req: LiteratureReviewRequest, db: Session = Depends(get_db)):
+def literature_review(req: LiteratureReviewRequest, db: Session = Depends(get_db), _rl=Depends(ai_rate_limit)):
     """Search open sources and generate a literature review matrix."""
     connector = OpenAlexConnector()
     try:
@@ -293,7 +294,7 @@ def literature_review(req: LiteratureReviewRequest, db: Session = Depends(get_db
 
 
 @router.post("/theory-recommendation")
-def theory_recommendation(req: TheoryRequest):
+def theory_recommendation(req: TheoryRequest, _rl=Depends(ai_rate_limit)):
     theories = recommend_theories(req.topic, req.context)
     return {"topic": req.topic, "recommended_theories": theories}
 
@@ -304,7 +305,7 @@ def theory_recommendation(req: TheoryRequest):
 
 
 @router.post("/method-recommendation")
-def method_recommendation(req: MethodRequest):
+def method_recommendation(req: MethodRequest, _rl=Depends(ai_rate_limit)):
     methods = recommend_methods(req.topic, req.context)
     return {"topic": req.topic, "recommended_methods": methods}
 
@@ -315,7 +316,7 @@ def method_recommendation(req: MethodRequest):
 
 
 @router.post("/variable-recommendation")
-def variable_recommendation(req: VariableRequest):
+def variable_recommendation(req: VariableRequest, _rl=Depends(ai_rate_limit)):
     variables = recommend_variables(req.topic, req.context)
     datasets = suggest_african_datasets(req.topic)
     framework = generate_conceptual_framework(req.topic, [], [v["variable"] for v in variables])

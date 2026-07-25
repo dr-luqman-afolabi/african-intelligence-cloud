@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.middleware.rate_limit import ai_rate_limit
 from app.services import rag_service
 
 router = APIRouter(prefix="/rag", tags=["RAG"])
@@ -38,6 +39,6 @@ class RAGQueryResponse(BaseModel):
 
 
 @router.post("/query", response_model=RAGQueryResponse)
-def rag_query(req: RAGQueryRequest, db: Session = Depends(get_db)):
+def rag_query(req: RAGQueryRequest, db: Session = Depends(get_db), _rl=Depends(ai_rate_limit)):
     result = rag_service.answer_query(req.query, db)
     return result
