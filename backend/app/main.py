@@ -88,6 +88,46 @@ def _bootstrap_macro_data_sync(db):
         except Exception:
             log.warning("Bootstrap sync failed for %s (non-fatal)", source_id, exc_info=True)
 
+
+def _backfill_missing_macro_data(db):
+    """Resumable, per-country macro backfill.
+
+    The bulk bootstrap crawl can be evicted mid-run on Cloud Run
+    (min-instances=0), leaving some countries populated and others empty — and
+    its "source already has any data" guard then skips re-running forever, so
+    the empty countries never get filled. This closes that gap country by
+    country: sync_macro_data() upserts and commits per country, so progress
+    persists across restarts and the missing set shrinks until every active
+    country is covered. Idempotent and safe on every startup — it no-ops once
+    all countries have data, and never runs under tests.
+    """
+    if get_settings().app_env.strip().lower() == "test":
+        return
+    import logging
+    from app.models.macro_data import MacroData
+    from app.models.country import Country
+    from app.services.worldbank_connector import sync_macro_data
+
+    log = logging.getLogger(__name__)
+    try:
+        countries = db.query(Country).filter(Country.is_active == True).all()  # noqa: E712
+    except Exception:
+        return
+    missing = [
+        c.iso3 for c in countries
+        if db.query(MacroData).filter(MacroData.country_iso3 == c.iso3).first() is None
+    ]
+    if not missing:
+        return
+    log.info("Macro backfill: %d countries missing data — syncing", len(missing))
+    for iso3 in missing:
+        try:
+            n = sync_macro_data(db, iso3)
+            log.info("Macro backfill: %s -> %d rows", iso3, n)
+        except Exception:
+            log.warning("Macro backfill failed for %s (non-fatal)", iso3, exc_info=True)
+
+
 def _run_startup_tasks():
     try:
         Base.metadata.create_all(bind=_db.engine, checkfirst=True)
@@ -99,6 +139,7 @@ def _run_startup_tasks():
             seed_surveys(db)
             seed_research_sources(db)
             _bootstrap_macro_data_sync(db)
+            _backfill_missing_macro_data(db)
             start_scheduler(db)
         except Exception as e:
             import logging
