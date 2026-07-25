@@ -18,7 +18,16 @@ from app.models.country import Country
 from app.models.indicator import Indicator
 
 _test_db_url = _os.environ.get("DATABASE_URL", "sqlite:///:memory:")
-_extra_kw = {"connect_args": {"check_same_thread": False}} if "sqlite" in _test_db_url else {}
+# In-memory SQLite gives each *connection* its own separate database. Without a
+# StaticPool (single shared connection), tables created by the fixture are
+# invisible to request handlers that run on another thread/connection, producing
+# spurious "no such table" errors. StaticPool pins one connection for the whole
+# in-memory DB so schema + seed data are visible everywhere.
+_extra_kw = (
+    {"connect_args": {"check_same_thread": False}, "poolclass": StaticPool}
+    if "sqlite" in _test_db_url
+    else {}
+)
 engine = create_engine(_test_db_url, **_extra_kw)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 _db_module.engine = engine

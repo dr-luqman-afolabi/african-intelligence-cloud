@@ -31,6 +31,9 @@ def decode_token(token: str) -> dict:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 def register_user(db: Session, email: str, full_name: str, password: str, role: UserRole = UserRole.VIEWER) -> User:
+    # Normalize so casing/whitespace can't create duplicate accounts
+    # (e.g. RSKJNR001@… vs rskjnr001@…).
+    email = email.strip().lower()
     if db.query(User).filter(User.email == email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     is_first_user = db.query(User).count() == 0
@@ -47,6 +50,7 @@ def register_user(db: Session, email: str, full_name: str, password: str, role: 
     return user
 
 def authenticate_user(db: Session, email: str, password: str) -> User:
+    email = email.strip().lower()
     user = db.query(User).filter(User.email == email).first()
     if not user or not verify_password(password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")

@@ -119,6 +119,7 @@ jobs:
             --region ${{ env.REGION }} \
             --project ${{ env.PROJECT_ID }} \
             --platform managed \
+            --update-env-vars APP_ENV=production \
             --quiet
 
       - name: Run database migrations

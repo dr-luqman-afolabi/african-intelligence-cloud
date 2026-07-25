@@ -42,7 +42,6 @@ function isGroup(entry: NavEntry): entry is NavGroup {
 }
 
 const ADMIN_ROLES = new Set(["super_admin", "org_admin"]);
-const API_DOCS_URL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/docs`;
 
 function Chevron() {
   return (
@@ -148,14 +147,6 @@ export default function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <a
-            href={API_DOCS_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-slate-300 transition hover:text-white"
-          >
-            API Docs
-          </a>
           <Link href="/profile" className="text-sm text-slate-300 transition hover:text-white">
             Profile
           </Link>
@@ -227,14 +218,6 @@ export default function Navbar() {
                 Admin
               </Link>
             )}
-            <a
-              href={API_DOCS_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
-            >
-              API Docs
-            </a>
             <Link
               href="/profile"
               className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"

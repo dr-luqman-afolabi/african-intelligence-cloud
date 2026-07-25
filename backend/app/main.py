@@ -131,11 +131,19 @@ async def lifespan(app: FastAPI):
     yield
     stop_scheduler()
 
+# In production, hide the interactive API explorer and machine-readable schema
+# so the full endpoint surface isn't published to anyone. Set APP_ENV=production
+# in the deployment environment to enable this.
+_is_production = settings.app_env.strip().lower() == "production"
+
 app = FastAPI(
     title="African Intelligence Cloud API",
     description="Macroeconomic data, analytics, and policy intelligence for Africa",
     version="0.1.0",
     lifespan=lifespan,
+    docs_url=None if _is_production else "/docs",
+    redoc_url=None if _is_production else "/redoc",
+    openapi_url=None if _is_production else "/openapi.json",
 )
 
 app.add_middleware(

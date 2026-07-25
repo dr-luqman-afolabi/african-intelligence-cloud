@@ -46,6 +46,23 @@ def test_register_user(client):
     assert data["role"] == "super_admin"
 
 
+def test_email_is_case_insensitive(client):
+    # Registering with mixed case, then re-registering with different case, must
+    # be treated as the same account (no duplicate), and login must work in any case.
+    client.post("/api/v1/auth/register", json={
+        "email": "Mixed.Case@AIC.africa", "full_name": "Case", "password": "casepw12",
+    })
+    dup = client.post("/api/v1/auth/register", json={
+        "email": "mixed.case@aic.africa", "full_name": "Case2", "password": "casepw34",
+    })
+    assert dup.status_code == 400  # same email regardless of casing
+    login = client.post("/api/v1/auth/login", json={
+        "email": "MIXED.CASE@AIC.AFRICA", "password": "casepw12",
+    })
+    assert login.status_code == 200
+    assert "access_token" in login.json()
+
+
 def test_register_duplicate_email(client):
     payload = {"email": "dup@aic.africa", "full_name": "Dup", "password": "pass123"}
     client.post("/api/v1/auth/register", json=payload)
