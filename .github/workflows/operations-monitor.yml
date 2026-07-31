@@ -75,13 +75,7 @@ jobs:
               gh issue close "$existing" --repo "$GITHUB_REPOSITORY" --reason completed
             fi
           else
-            body="Production monitoring failed at $(date -u +'%Y-%m-%dT%H:%M:%SZ').
-
-- Application smoke checks: $SMOKE_OUTCOME
-- Connector/data checks: $DATA_OUTCOME
-- Workflow: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
-
-The monitor already retried transient network failures. Review the run summary and logs before making stateful repairs."
+            body=$(printf 'Production monitoring failed at %s.\\n\\n- Application smoke checks: %s\\n- Connector/data checks: %s\\n- Workflow: %s/%s/actions/runs/%s\\n\\nThe monitor already retried transient network failures. Review the run summary and logs before making stateful repairs.' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" "$SMOKE_OUTCOME" "$DATA_OUTCOME" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")
             if [[ -n "$existing" ]]; then
               gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
             else
