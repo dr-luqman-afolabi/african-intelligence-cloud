@@ -11,7 +11,6 @@ updates:
     groups:
       frontend-patch-updates:
         update-types: [patch]
-    labels: [dependencies, frontend]
 
   - package-ecosystem: pip
     directory: /backend
@@ -24,7 +23,6 @@ updates:
     groups:
       backend-patch-updates:
         update-types: [patch]
-    labels: [dependencies, backend]
 
   - package-ecosystem: github-actions
     directory: /
@@ -37,4 +35,3 @@ updates:
     groups:
       actions-patch-updates:
         update-types: [patch]
-    labels: [dependencies, automation]
