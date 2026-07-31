@@ -3,8 +3,17 @@
 import { Suspense, useEffect, useState } from "react";
 import AIPolicyBriefPanel from "@/components/microdata/AIPolicyBriefPanel";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
-import { runSpatialPovertyAnalysis, type AnalysisResultResponse } from "@/lib/api";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  fetchMicrodataDatasets,
+  fetchMicrodataVariables,
+  runSpatialPovertyAnalysis,
+  type AnalysisResultResponse,
+  type MicrodataDataset,
+  type MicrodataVariable,
+} from "@/lib/api";
+import { AFRICAN_COUNTRIES, ADMIN_LEVELS } from "@/lib/africaCountries";
 
 // Leaflet reads `window` at import time — must load client-side only.
 const ChoroplethMap = dynamic(() => import("@/components/microdata/ChoroplethMap"), {
@@ -25,6 +34,133 @@ interface MoransI {
   note?: string;
 }
 
+function SpatialSetup() {
+  const router = useRouter();
+  const [datasets, setDatasets] = useState<MicrodataDataset[]>([]);
+  const [variables, setVariables] = useState<MicrodataVariable[]>([]);
+  const [datasetId, setDatasetId] = useState("");
+  const [geoVariable, setGeoVariable] = useState("");
+  const [welfareVariable, setWelfareVariable] = useState("");
+  const [weightVariable, setWeightVariable] = useState("");
+  const [countryIso3, setCountryIso3] = useState("RWA");
+  const [adminLevel, setAdminLevel] = useState("ADM2");
+  const [povertyLine, setPovertyLine] = useState(100);
+  const [loading, setLoading] = useState(true);
+  const [variablesLoading, setVariablesLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetchMicrodataDatasets(0, 500)
+      .then((response) => {
+        setDatasets(response.items);
+        if (response.items[0]) {
+          setDatasetId(response.items[0].id);
+          if (response.items[0].country_iso3) setCountryIso3(response.items[0].country_iso3);
+        }
+      })
+      .catch(() => setError("Sign in to access analysis-ready datasets."))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!datasetId) {
+      setVariables([]);
+      return;
+    }
+    setVariablesLoading(true);
+    setGeoVariable("");
+    setWelfareVariable("");
+    setWeightVariable("");
+    fetchMicrodataVariables(datasetId)
+      .then(setVariables)
+      .catch(() => setError("The variables for this dataset could not be loaded."))
+      .finally(() => setVariablesLoading(false));
+    const selected = datasets.find((item) => item.id === datasetId);
+    if (selected?.country_iso3) setCountryIso3(selected.country_iso3);
+  }, [datasetId, datasets]);
+
+  function launch() {
+    if (!datasetId || !geoVariable || !welfareVariable || povertyLine <= 0) {
+      setError("Select a dataset, geography variable, welfare variable and a positive poverty line.");
+      return;
+    }
+    const params = new URLSearchParams({
+      dataset_id: datasetId,
+      geo_variable: geoVariable,
+      welfare_variable: welfareVariable,
+      poverty_line: String(povertyLine),
+      country_iso3: countryIso3,
+      admin_level: adminLevel,
+    });
+    if (weightVariable) params.set("weight_variable", weightVariable);
+    router.push(`/microdata/spatial?${params.toString()}`);
+  }
+
+  return (
+    <main className="mx-auto max-w-5xl px-4 py-10 sm:py-14">
+      <div className="mb-8">
+        <p className="text-xs font-bold uppercase tracking-widest text-blue-600">Guided spatial workflow</p>
+        <h1 className="mt-2 text-3xl font-bold text-aic-dark sm:text-4xl">Build a poverty map</h1>
+        <p className="mt-3 max-w-3xl text-aic-muted">
+          Choose the microdata variables and administrative boundary level. AIC automatically retrieves
+          country boundaries, joins regional estimates and opens the choropleth when analysis finishes.
+        </p>
+      </div>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+        <div className="mb-6 grid grid-cols-3 gap-2 text-center text-xs font-semibold">
+          <div className="rounded-lg bg-blue-600 px-2 py-3 text-white">1. Configure</div>
+          <div className="rounded-lg bg-slate-100 px-2 py-3 text-slate-500">2. Analyze</div>
+          <div className="rounded-lg bg-slate-100 px-2 py-3 text-slate-500">3. Explore map</div>
+        </div>
+        {error && <div role="alert" className="mb-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+        <div className="grid gap-5 md:grid-cols-2">
+          <label className="text-sm font-medium text-slate-700">Dataset
+            <select value={datasetId} onChange={(event) => setDatasetId(event.target.value)} disabled={loading} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3">
+              <option value="">{loading ? "Loading datasets…" : "Select a dataset…"}</option>
+              {datasets.map((item) => <option key={item.id} value={item.id}>{item.name}{item.country_iso3 ? ` — ${item.country_iso3}` : ""}</option>)}
+            </select>
+          </label>
+          <label className="text-sm font-medium text-slate-700">Country boundaries
+            <select value={countryIso3} onChange={(event) => setCountryIso3(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3">
+              {AFRICAN_COUNTRIES.map((item) => <option key={item.iso3} value={item.iso3}>{item.name}</option>)}
+            </select>
+          </label>
+          <label className="text-sm font-medium text-slate-700">Geography variable
+            <select value={geoVariable} onChange={(event) => setGeoVariable(event.target.value)} disabled={!datasetId || variablesLoading} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 disabled:bg-slate-50">
+              <option value="">{variablesLoading ? "Loading variables…" : "Select district/region field…"}</option>
+              {variables.map((item) => <option key={item.id} value={item.variable_name}>{item.variable_label ? `${item.variable_label} — ` : ""}{item.variable_name}</option>)}
+            </select>
+          </label>
+          <label className="text-sm font-medium text-slate-700">Administrative level
+            <select value={adminLevel} onChange={(event) => setAdminLevel(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3">
+              {ADMIN_LEVELS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+            </select>
+          </label>
+          <label className="text-sm font-medium text-slate-700">Welfare variable
+            <select value={welfareVariable} onChange={(event) => setWelfareVariable(event.target.value)} disabled={!datasetId || variablesLoading} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 disabled:bg-slate-50">
+              <option value="">Select consumption/income field…</option>
+              {variables.map((item) => <option key={item.id} value={item.variable_name}>{item.variable_label ? `${item.variable_label} — ` : ""}{item.variable_name}</option>)}
+            </select>
+          </label>
+          <label className="text-sm font-medium text-slate-700">Weight variable (optional)
+            <select value={weightVariable} onChange={(event) => setWeightVariable(event.target.value)} disabled={!datasetId || variablesLoading} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 disabled:bg-slate-50">
+              <option value="">No survey weight</option>
+              {variables.map((item) => <option key={item.id} value={item.variable_name}>{item.variable_label ? `${item.variable_label} — ` : ""}{item.variable_name}</option>)}
+            </select>
+          </label>
+          <label className="text-sm font-medium text-slate-700">Poverty line
+            <input type="number" min="0.01" step="0.01" value={povertyLine} onChange={(event) => setPovertyLine(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3" />
+          </label>
+        </div>
+        <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
+          <Link href="/microdata" className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium">Back to Microdata Studio</Link>
+          <button onClick={launch} disabled={!datasetId || !geoVariable || !welfareVariable || povertyLine <= 0} className="rounded-lg bg-aic-green px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-40">Run analysis and open map →</button>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 function SpatialResultsInner() {
   const searchParams = useSearchParams();
 
@@ -33,14 +169,16 @@ function SpatialResultsInner() {
   const welfareVariable = searchParams.get("welfare_variable") || "";
   const povertyLine = Number(searchParams.get("poverty_line") || "0");
   const weightVariable = searchParams.get("weight_variable") || undefined;
+  const countryIso3 = searchParams.get("country_iso3") || undefined;
+  const adminLevel = searchParams.get("admin_level") || "ADM2";
+  const hasRequiredParameters = Boolean(datasetId && geoVariable && welfareVariable && povertyLine > 0);
 
   const [result, setResult] = useState<AnalysisResultResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!datasetId || !welfareVariable || !povertyLine || !geoVariable) {
-      setError("Missing required analysis parameters.");
+    if (!hasRequiredParameters) {
       setLoading(false);
       return;
     }
@@ -52,6 +190,8 @@ function SpatialResultsInner() {
       welfare_variable: welfareVariable,
       poverty_line: povertyLine,
       weight_variable: weightVariable,
+      country_iso3: countryIso3,
+      admin_level: adminLevel,
     })
       .then((res) => {
         if (res.status === "failed") {
@@ -63,7 +203,9 @@ function SpatialResultsInner() {
       .catch(() => setError("Could not run spatial analysis. Please try again."))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [datasetId, welfareVariable, povertyLine, weightVariable, geoVariable]);
+  }, [datasetId, welfareVariable, povertyLine, weightVariable, geoVariable, countryIso3, adminLevel, hasRequiredParameters]);
+
+  if (!hasRequiredParameters) return <SpatialSetup />;
 
   const charts = (result?.charts || {}) as {
     rankings?: Record<string, unknown>[];
@@ -74,13 +216,23 @@ function SpatialResultsInner() {
 
   return (
     <main className="max-w-5xl mx-auto px-4 py-16">
-      <h1 className="text-4xl font-bold text-aic-dark mb-4">Spatial Poverty Analysis</h1>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-4xl font-bold text-aic-dark">Spatial Poverty Analysis</h1>
+        <Link href="/microdata/spatial" className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium">New spatial analysis</Link>
+      </div>
       <p className="text-aic-muted mb-10">
         District and province-level poverty rankings derived from your uploaded microdata,
         with map-ready output for geographic visualization.
       </p>
 
-      {loading && <p className="text-aic-muted">Running spatial analysis...</p>}
+      {loading && (
+        <section className="rounded-2xl border border-blue-100 bg-blue-50 p-6">
+          <div className="flex items-center gap-4">
+            <span className="grid h-12 w-12 animate-pulse place-items-center rounded-full bg-blue-600 text-xl text-white">⌖</span>
+            <div><p className="font-semibold text-blue-950">Building your map automatically…</p><p className="mt-1 text-sm text-blue-700">Computing regional poverty, retrieving {countryIso3} {adminLevel} boundaries and joining the results.</p></div>
+          </div>
+        </section>
+      )}
       {error && <p className="text-aic-red mb-6">{error}</p>}
 
       {!loading && !error && result && (
@@ -96,10 +248,9 @@ function SpatialResultsInner() {
               />
             ) : (
               <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center h-64 text-aic-muted text-sm text-center px-6">
-                No boundary geometry was available for this analysis. Upload GADM/OCHA boundaries via
-                POST /spatial/boundaries/upload (GeoJSON or zipped shapefile), or pass a GeoJSON file
-                when running the analysis, to enable choropleth mapping of poverty rates by{" "}
-                {geoVariable || "region"}.
+                AIC could not match the selected geography values to the automatic {countryIso3} {adminLevel}
+                boundaries. Confirm that the geography field contains recognizable district or region names,
+                then start a new spatial analysis with the correct administrative level.
               </div>
             )}
           </section>
