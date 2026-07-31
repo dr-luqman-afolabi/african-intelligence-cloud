@@ -1,0 +1,54 @@
+name: Automatic CI recovery
+
+on:
+  workflow_run:
+    workflows: ["CI / CD"]
+    types: [completed]
+
+permissions:
+  actions: write
+  contents: read
+  issues: write
+
+jobs:
+  recover:
+    if: >-
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.conclusion == 'failure'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      INCIDENT_TITLE: "[Automated Recovery] Main deployment repeatedly failed"
+    steps:
+      - name: Retry transient failure once
+        if: github.event.workflow_run.run_attempt < 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          echo "Retrying failed jobs for workflow run $RUN_ID (one automatic attempt)."
+          gh run rerun "$RUN_ID" --repo "$GITHUB_REPOSITORY" --failed
+
+      - name: Escalate persistent failure
+        if: github.event.workflow_run.run_attempt >= 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open             --search "$INCIDENT_TITLE in:title" --json number --jq '.[0].number // empty')"
+          body="The main deployment failed again after one automatic retry.
+
+- Commit: `$HEAD_SHA`
+- Failed workflow: $RUN_URL
+- Detected: $(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+Automatic recovery stopped to avoid a retry loop. Human review is required."
+          if [[ -n "$existing" ]]; then
+            gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$INCIDENT_TITLE" --body "$body"
+          fi
