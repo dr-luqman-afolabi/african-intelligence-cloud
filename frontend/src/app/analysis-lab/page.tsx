@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import axios from "axios";
 import {useEffect,useMemo,useState} from "react";
 import {cleanIntelligence,fetchMicrodataDatasets,planIntelligence,runIntelligenceAnalysis,type AnalysisResultResponse,type IntelligencePlan,type MicrodataDataset} from "@/lib/api";
@@ -7,7 +6,6 @@ import {cleanIntelligence,fetchMicrodataDatasets,planIntelligence,runIntelligenc
 type Stage="data"|"question"|"plan"|"execute"|"results";
 type Purpose="association"|"prediction"|"causal";
 const STEPS:[Stage,string][]=[["data","Data"],["question","Question"],["plan","Plan"],["execute","Execute"],["results","Results"]];
-const NAV=[["Dashboard","/dashboard","▦"],["Analysis Lab","/analysis-lab","♙"],["Microdata","/microdata","▤"],["Spatial","/microdata/spatial","◫"],["Forecasting","/forecasting","↗"],["AI Research","/research","✣"],["Projects","/projects","▣"]];
 
 function apiErrorMessage(error: unknown, fallback: string) {
  const detail=axios.isAxiosError(error)?error.response?.data?.detail:undefined;
@@ -23,9 +21,8 @@ export default function Page(){
  async function makePlan(){if(!datasetId||!question.trim()){setError("Select a dataset and enter a research question.");return}setBusy(true);setError("");try{const p=await planIntelligence(datasetId,question.trim());setPlan(p);const v=Object.fromEntries(Object.entries(p.parameters||{}).map(([k,x])=>[k,x==null?"":String(x)]));if(outcome&&!v.welfare_variable)v.welfare_variable=outcome;setParams(v);setStage("plan")}catch(caught){setError(apiErrorMessage(caught,"AIC could not build a defensible plan. Check the dataset mapping or rephrase the question."))}finally{setBusy(false)}}
  async function run(){if(!plan||!approved)return;setBusy(true);setStage("execute");setError("");try{let id=datasetId;if(plan.cleaning_steps.length)id=(await cleanIntelligence(id,plan.cleaning_steps)).cleaned_dataset_id;const p=Object.fromEntries(Object.entries(params).filter(([,v])=>v!=="").map(([k,v])=>[k,k==="poverty_line"?Number(v):v]));if(plan.endpoint.startsWith("spatial-")){if(selected?.country_iso3)p.country_iso3=selected.country_iso3;p.admin_level="ADM2"}const r=await runIntelligenceAnalysis(plan.endpoint,id,p);if(r.status==="failed")throw new Error(r.error_message||"Analysis failed");setResult(r);setStage("results")}catch(e){setError(apiErrorMessage(e,"Analysis failed"));setStage("plan")}finally{setBusy(false)}}
  function download(){const u=URL.createObjectURL(new Blob([JSON.stringify({dataset_id:datasetId,question,purpose,plan,params,result},null,2)],{type:"application/json"})),a=document.createElement("a");a.href=u;a.download="aic-analysis-record.json";a.click();URL.revokeObjectURL(u)}
- return <main className="min-h-screen bg-slate-100 p-3 sm:p-6"><div className="mx-auto flex min-h-[740px] max-w-6xl overflow-hidden rounded-2xl border bg-white shadow-sm">
-  <aside className="hidden w-56 shrink-0 bg-blue-500 p-5 text-white md:block"><Link href="/" className="flex items-center gap-3 font-bold"><span className="grid h-9 w-9 place-items-center rounded-full bg-white text-blue-500">A</span>AIC</Link><nav className="mt-8 space-y-1">{NAV.map(([n,h,i],x)=><div key={h}>{(x===1||x===5)&&<p className="mb-2 mt-6 px-3 text-[10px] text-blue-100">{x===1?"ANALYZE":"RESEARCH"}</p>}<Link href={h} className={`flex gap-3 rounded-lg px-3 py-2.5 text-sm ${h==="/analysis-lab"?"bg-white/20 font-semibold":"hover:bg-white/10"}`}><span>{i}</span>{n}</Link></div>)}</nav></aside>
-  <div className="min-w-0 flex-1 p-5 sm:p-8"><header className="flex justify-between gap-3"><div><h1 className="text-2xl font-bold">Automated Analysis Lab</h1><p className="mt-1 text-sm text-slate-500">Project: {selected?.name||"Select a research dataset"}</p></div><span className="h-fit rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-500">Private workspace</span></header>
+ return <main className="min-h-screen bg-slate-100 p-3 sm:p-6"><div className="mx-auto min-h-[740px] max-w-5xl overflow-hidden rounded-2xl border bg-white shadow-sm">
+  <div className="min-w-0 p-5 sm:p-8"><header className="flex justify-between gap-3"><div><h1 className="text-2xl font-bold">Automated Analysis Lab</h1><p className="mt-1 text-sm text-slate-500">Project: {selected?.name||"Select a research dataset"}</p></div><span className="h-fit rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-500">Private workspace</span></header>
    <ol className="mt-6 grid grid-cols-5 gap-2">{STEPS.map(([id,label],i)=><li key={id}><button disabled={i>index} onClick={()=>setStage(id)} className={`w-full border-t-2 pt-3 text-left text-xs sm:text-sm ${i===index?"border-blue-500 font-bold":i<index?"border-blue-300 text-slate-600":"border-slate-200 text-slate-400"}`}>{i+1}. {label}</button></li>)}</ol>
    {error&&<div role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
    <div className="mt-7 grid gap-6 lg:grid-cols-[1fr_240px]"><section>
