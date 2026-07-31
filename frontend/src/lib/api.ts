@@ -964,11 +964,20 @@ export interface IntelligenceCleanResponse {
 }
 
 export async function planIntelligence(datasetId: string, question: string): Promise<IntelligencePlan> {
-  const { data } = await api.post<IntelligencePlan>("/intelligence/plan", {
+  const request = () => api.post<IntelligencePlan>("/intelligence/plan", {
     dataset_id: datasetId,
     question,
   });
-  return data;
+  try {
+    return (await request()).data;
+  } catch (error) {
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+    if (status === undefined || status === 502 || status === 503 || status === 504) {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      return (await request()).data;
+    }
+    throw error;
+  }
 }
 
 export async function cleanIntelligence(

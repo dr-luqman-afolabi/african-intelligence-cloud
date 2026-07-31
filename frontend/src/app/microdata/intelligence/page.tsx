@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import axios from "axios";
 import AIPolicyBriefPanel from "@/components/microdata/AIPolicyBriefPanel";
 import {
   fetchMicrodataDatasets,
@@ -61,8 +62,13 @@ export default function AICIntelligencePage() {
         initial[k] = v === null || v === undefined ? "" : String(v);
       });
       setParams(initial);
-    } catch {
-      setError("Could not build a plan for that question. Try rephrasing or pick a dataset.");
+    } catch (caught) {
+      const detail = axios.isAxiosError(caught) ? caught.response?.data?.detail : undefined;
+      setError(
+        typeof detail === "string"
+          ? detail
+          : "Could not build a plan for that question. Try rephrasing or pick a dataset.",
+      );
     } finally {
       setPlanning(false);
     }
