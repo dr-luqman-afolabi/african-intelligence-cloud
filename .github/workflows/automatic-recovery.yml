@@ -40,13 +40,7 @@ jobs:
         run: |
           set -euo pipefail
           existing="$(gh issue list --repo "$GITHUB_REPOSITORY" --state open             --search "$INCIDENT_TITLE in:title" --json number --jq '.[0].number // empty')"
-          body="The main deployment failed again after one automatic retry.
-
-- Commit: `$HEAD_SHA`
-- Failed workflow: $RUN_URL
-- Detected: $(date -u +'%Y-%m-%dT%H:%M:%SZ')
-
-Automatic recovery stopped to avoid a retry loop. Human review is required."
+          body=$(printf 'The main deployment failed again after one automatic retry.\\n\\n- Commit: %s\\n- Failed workflow: %s\\n- Detected: %s\\n\\nAutomatic recovery stopped to avoid a retry loop. Human review is required.' "$HEAD_SHA" "$RUN_URL" "$(date -u +'%Y-%m-%dT%H:%M:%SZ')")
           if [[ -n "$existing" ]]; then
             gh issue comment "$existing" --repo "$GITHUB_REPOSITORY" --body "$body"
           else
