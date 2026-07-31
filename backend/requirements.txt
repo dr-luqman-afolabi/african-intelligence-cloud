@@ -37,4 +37,4 @@ scikit-learn==1.4.2
 
 # Optional: powers AIC Intelligence natural-language planning via Vertex AI Gemini.
 # Falls back to a heuristic planner if absent or the API is not enabled.
-google-cloud-aiplatform==1.60.0
+google-cloud-aiplatform==1.162.0
