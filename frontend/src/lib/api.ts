@@ -1028,6 +1028,33 @@ export interface EparSeriesResponse {
   loaded: boolean;
 }
 
+export interface EparPackage {
+  id: string;
+  programme: string;
+  country_iso3: string;
+  wave: string;
+  years: string;
+  file_name: string;
+  size_bytes: number;
+  download_url: string;
+  source_path: string;
+}
+
+export interface EparPackageCatalog {
+  source: string;
+  repository: string;
+  source_commit: string;
+  license: string;
+  package_count: number;
+  countries: string[];
+  packages: EparPackage[];
+}
+
+export async function fetchEparPackages(): Promise<EparPackageCatalog> {
+  const { data } = await api.get<EparPackageCatalog>("/epar/packages");
+  return data;
+}
+
 export async function fetchEparMeta(): Promise<EparMeta> {
   const { data } = await api.get<EparMeta>("/epar/meta");
   return data;
