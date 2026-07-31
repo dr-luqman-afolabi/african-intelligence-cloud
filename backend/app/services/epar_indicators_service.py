@@ -171,3 +171,75 @@ def get_series(
                 "points": pts,
             })
     return {"series": series, "waves": [], "loaded": True}
+
+
+# Complete EPAR LSMS-ISA dissemination catalog. Packages remain at the
+# authoritative BSD-3-Clause source and are exposed through AIC with immutable
+# provenance metadata. The aggregate indicator file loaded above covers all of
+# these waves; the packages provide the analysis-ready final_data tables and
+# the intermediate construction tables needed for reproducibility.
+_REPOSITORY = "EvansSchoolPolicyAnalysisAndResearch/LSMS-Data-Dissemination"
+_SOURCE_COMMIT = "73f0ba6c4425057039d4d69388db6103320a5ccc"
+_PACKAGE_ROWS = [
+    ("eth_ess_w1", "Ethiopia ESS", "ETH", "Wave 1", "2011-12", "Ethiopia ESS/Ethiopia ESS W1.zip", 13015522),
+    ("eth_ess_w2", "Ethiopia ESS", "ETH", "Wave 2", "2013-14", "Ethiopia ESS/Ethiopia ESS W2.zip", 19400218),
+    ("eth_ess_w3", "Ethiopia ESS", "ETH", "Wave 3", "2015-16", "Ethiopia ESS/Ethiopia ESS W3.zip", 22567589),
+    ("eth_ess_w4", "Ethiopia ESS", "ETH", "Wave 4", "2018-19", "Ethiopia ESS/Ethiopia ESS W4.zip", 15472589),
+    ("eth_ess_w5", "Ethiopia ESS", "ETH", "Wave 5", "2021-22", "Ethiopia ESS/Ethiopia ESS W5.zip", 12969323),
+    ("nga_ghs_w1", "Nigeria GHS", "NGA", "Wave 1", "2010-11", "Nigeria GHS/Nigeria GHS W1.zip", 10358259),
+    ("nga_ghs_w2", "Nigeria GHS", "NGA", "Wave 2", "2012-13", "Nigeria GHS/Nigeria GHS W2.zip", 10670643),
+    ("nga_ghs_w3", "Nigeria GHS", "NGA", "Wave 3", "2015-16", "Nigeria GHS/Nigeria GHS W3.zip", 13699670),
+    ("nga_ghs_w4", "Nigeria GHS", "NGA", "Wave 4", "2018-19", "Nigeria GHS/Nigeria GHS W4.zip", 15190078),
+    ("nga_ghs_w5", "Nigeria GHS", "NGA", "Wave 5", "2022-23", "Nigeria GHS/Nigeria GHS W5.zip", 18709655),
+    ("tza_nps_w1", "Tanzania NPS", "TZA", "Wave 1", "2008-09", "Tanzania NPS/Tanzania NPS W1.zip", 8306627),
+    ("tza_nps_w2", "Tanzania NPS", "TZA", "Wave 2", "2010-11", "Tanzania NPS/Tanzania NPS W2.zip", 9505936),
+    ("tza_nps_w3", "Tanzania NPS", "TZA", "Wave 3", "2012-13", "Tanzania NPS/Tanzania NPS W3.zip", 10621711),
+    ("tza_nps_w4", "Tanzania NPS", "TZA", "Wave 4", "2014-15", "Tanzania NPS/Tanzania NPS W4.zip", 7653509),
+    ("tza_nps_sdd", "Tanzania NPS", "TZA", "SDD", "2019-20", "Tanzania NPS/Tanzania NPS SDD.zip", 3408896),
+    ("tza_nps_w5", "Tanzania NPS", "TZA", "Wave 5", "2020-21", "Tanzania NPS/Tanzania NPS W5.zip", 11001704),
+    ("mwi_ihs_w1", "Malawi IHS", "MWI", "Wave 1", "2010-11", "Malawi IHS/MWI IHS W1.zip", 34844151),
+    ("mwi_ihps_w2", "Malawi IHS", "MWI", "Wave 2", "2013", "Malawi IHS/MWI IHPS W2.zip", 13286429),
+    ("mwi_ihs_w3", "Malawi IHS", "MWI", "Wave 3", "2016-17", "Malawi IHS/MWI IHS IHPS W3.zip", 36960585),
+    ("mwi_ihs_w4", "Malawi IHS", "MWI", "Wave 4", "2019-20", "Malawi IHS/MWI IHS IHPS W4.zip", 46251157),
+    ("uga_unps_w1", "Uganda UNPS", "UGA", "Wave 1", "2009-10", "Uganda UNPS/Uganda UNPS W1.zip", 9945062),
+    ("uga_unps_w2", "Uganda UNPS", "UGA", "Wave 2", "2010-11", "Uganda UNPS/Uganda UNPS W2.zip", 11141083),
+    ("uga_unps_w3", "Uganda UNPS", "UGA", "Wave 3", "2011-12", "Uganda UNPS/Uganda UNPS W3.zip", 13202164),
+    ("uga_unps_w4", "Uganda UNPS", "UGA", "Wave 4", "2013-14", "Uganda UNPS/Uganda UNPS W4.zip", 17682073),
+    ("uga_unps_w5", "Uganda UNPS", "UGA", "Wave 5", "2015-16", "Uganda UNPS/Uganda UNPS W5.zip", 12049821),
+    ("uga_unps_w7", "Uganda UNPS", "UGA", "Wave 7", "2018-19", "Uganda UNPS/Uganda UNPS W7.zip", 14980655),
+    ("uga_unps_w8", "Uganda UNPS", "UGA", "Wave 8", "2019-20", "Uganda UNPS/Uganda UNPS W8.zip", 15141380),
+]
+
+
+def get_packages() -> dict[str, Any]:
+    """Return every source wave with a commit-pinned download URL.
+
+    Pinning the SHA prevents an upstream update from silently changing a
+    research input. Each ZIP includes EPAR's complete created_data and
+    analysis-ready final_data directories for that wave.
+    """
+    from urllib.parse import quote
+
+    packages = []
+    for package_id, programme, country, wave, years, path, size_bytes in _PACKAGE_ROWS:
+        encoded_path = quote(path, safe="/")
+        packages.append({
+            "id": package_id,
+            "programme": programme,
+            "country_iso3": country,
+            "wave": wave,
+            "years": years,
+            "file_name": path.rsplit("/", 1)[-1],
+            "size_bytes": size_bytes,
+            "download_url": f"https://raw.githubusercontent.com/{_REPOSITORY}/{_SOURCE_COMMIT}/{encoded_path}",
+            "source_path": path,
+        })
+    return {
+        "source": "EPAR LSMS Data Dissemination",
+        "repository": f"https://github.com/{_REPOSITORY}",
+        "source_commit": _SOURCE_COMMIT,
+        "license": "BSD-3-Clause",
+        "package_count": len(packages),
+        "countries": sorted({p[2] for p in _PACKAGE_ROWS}),
+        "packages": packages,
+    }
