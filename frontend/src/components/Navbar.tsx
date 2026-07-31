@@ -19,6 +19,7 @@ const NAV: NavEntry[] = [
       { href: "/microdata/intelligence", label: "AIC Intelligence" },
       { href: "/analysis-lab", label: "Automated Analysis Lab" },
       { href: "/microdata/indicators", label: "Ag Indicators" },
+      { href: "/consumption", label: "Consumption Observatory" },
       { href: "/forecast", label: "Forecasting" },
       { href: "/microdata/explorer", label: "Spatial Explorer" },
     ],
