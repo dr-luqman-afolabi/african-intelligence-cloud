@@ -675,6 +675,8 @@ export interface SpatialPovertyAnalysisRequest {
   poverty_line: number;
   weight_variable?: string;
   geojson_boundary_file?: string;
+  country_iso3?: string;
+  admin_level?: string;
 }
 
 export interface AnalysisResultResponse {
