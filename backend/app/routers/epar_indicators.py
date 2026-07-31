@@ -28,3 +28,9 @@ def epar_series(
     rural: str | None = None,
 ):
     return epar.get_series(countries, indicators, gender, farmsize, commodity, rural)
+
+
+@router.get("/packages", summary="Complete EPAR LSMS-ISA wave package catalog")
+def epar_packages():
+    """All 27 openly disseminated wave packages with immutable source URLs."""
+    return epar.get_packages()
