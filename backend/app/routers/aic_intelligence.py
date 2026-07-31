@@ -96,10 +96,68 @@ def create_plan(
             columns = []
     try:
         plan = intel.build_plan(payload.question, columns)
+        return IntelligencePlan.model_validate(plan)
     except Exception as exc:
-        logger.error("Intelligence planning failed", exc_info=True)
-        raise HTTPException(status_code=422, detail=f"Could not plan analysis: {exc}")
-    return plan
+        logger.error("Intelligence planning failed; using validated fallback", exc_info=True)
+
+    names = [str(column.get("name") or "") for column in columns if column.get("name")]
+    lowered = {name: name.lower() for name in names}
+
+    def find_column(stems: tuple[str, ...]) -> str | None:
+        return next(
+            (name for name in names if any(stem in lowered[name] for stem in stems)),
+            None,
+        )
+
+    welfare = find_column(("consum", "expend", "welfare", "income", "pcexp", "totcons"))
+    geography = find_column(("district", "region", "province", "admin", "county", "lga", "zone"))
+    weight = find_column(("weight", "hhweight", "sample", "_wt", "wt_"))
+    question_lower = payload.question.lower()
+    spatial = any(
+        term in question_lower
+        for term in ("map", "spatial", "hotspot", "district", "region", "where")
+    )
+
+    parameters: dict[str, object] = {
+        "welfare_variable": welfare or (names[0] if names else ""),
+        "poverty_line": 2.15,
+    }
+    if weight:
+        parameters["weight_variable"] = weight
+    if spatial:
+        parameters["geo_variable"] = geography or ""
+    elif geography:
+        parameters["geography_variable"] = geography
+
+    warnings = [
+        "AIC used its deterministic fallback planner. Review the mapped variables before approval."
+    ]
+    if not welfare:
+        warnings.append("No welfare column was confidently detected; select the correct welfare variable.")
+    if spatial and not geography:
+        warnings.append("No geography column was confidently detected; select the district or region variable.")
+
+    return IntelligencePlan(
+        analysis="spatial-poverty" if spatial else "poverty",
+        analysis_label="Spatial poverty (map + hotspots)" if spatial else "Poverty & inequality",
+        endpoint="spatial-poverty" if spatial else "poverty",
+        parameters=parameters,
+        cleaning_steps=[
+            {
+                "kind": "standardize_columns",
+                "label": "Standardize column names (trim spaces, unify casing)",
+            },
+            {
+                "kind": "drop_empty",
+                "label": "Drop completely empty rows and columns",
+            },
+        ],
+        rationale="Prepared a validated poverty analysis plan from the available dataset metadata.",
+        warnings=warnings,
+        engine="deterministic-fallback",
+        needs_clarification=not welfare or (spatial and not geography),
+        clarification="Review the welfare and geography mappings before approval.",
+    )
 
 
 @router.post("/clean", response_model=IntelligenceCleanResponse)
