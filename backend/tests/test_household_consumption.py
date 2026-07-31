@@ -22,7 +22,7 @@ def test_consumption_catalog_filters_without_changing_totals():
     assert {item["country_iso3"] for item in uganda["datasets"]} == {"UGA"}
 
     ehcvm = get_catalog(survey="ehcvm")
-    assert ehcvm["dataset_count"] == 14
+    assert ehcvm["dataset_count"] == 16
     assert {item["survey"] for item in ehcvm["datasets"]} == {"EHCVM"}
 
 
