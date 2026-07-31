@@ -60,7 +60,7 @@ export default function AnalysisLabPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetchMicrodataDatasets(0, 100)
+    fetchMicrodataDatasets(0, 500)
       .then((response) => {
         setDatasets(response.items);
         if (response.items.length) setDatasetId(response.items[0].id);
@@ -70,6 +70,8 @@ export default function AnalysisLabPage() {
   }, []);
 
   const selected = useMemo(() => datasets.find((item) => item.id === datasetId), [datasets, datasetId]);
+  const integratedDatasets = useMemo(() => datasets.filter((item) => item.access_status !== "user_upload"), [datasets]);
+  const uploadedDatasets = useMemo(() => datasets.filter((item) => item.access_status === "user_upload"), [datasets]);
   const currentIndex = STEPS.findIndex((item) => item.id === stage);
 
   async function buildPlan() {
@@ -169,14 +171,16 @@ export default function AnalysisLabPage() {
             <div className="card p-6 sm:p-8">
               <p className="section-label">01 · Select data</p>
               <h2 className="mt-2 text-2xl font-bold text-aic-dark">Choose a research dataset</h2>
-              <p className="mt-2 text-sm text-aic-muted">The lab uses datasets already protected by your AIC account and privacy settings.</p>
+              <p className="mt-2 text-sm text-aic-muted">Choose from AIC’s integrated database catalog or datasets uploaded to the shared authenticated workspace. Access rules continue to apply to every analysis.</p>
+              {!loading && datasets.length > 0 && <div className="mt-4 flex flex-wrap gap-2"><span className="badge bg-emerald-100 text-emerald-800">{integratedDatasets.length} integrated</span><span className="badge bg-blue-100 text-blue-800">{uploadedDatasets.length} uploaded</span><span className="badge bg-slate-100 text-slate-700">{datasets.length} available</span></div>}
               <label className="mt-7 block text-sm font-semibold text-aic-dark">Dataset</label>
               <select className="input-field mt-2" value={datasetId} onChange={(event) => setDatasetId(event.target.value)} disabled={loading}>
                 {loading && <option>Loading datasets…</option>}
                 {!loading && !datasets.length && <option value="">No datasets available</option>}
-                {datasets.map((dataset) => <option key={dataset.id} value={dataset.id}>{dataset.name}{dataset.country_iso3 ? ` — ${dataset.country_iso3}` : ""}</option>)}
+                {integratedDatasets.length > 0 && <optgroup label="AIC integrated datasets">{integratedDatasets.map((dataset) => <option key={dataset.id} value={dataset.id}>{dataset.name}{dataset.country_iso3 ? ` — ${dataset.country_iso3}` : ""}{dataset.year ? ` · ${dataset.year}` : ""}</option>)}</optgroup>}
+                {uploadedDatasets.length > 0 && <optgroup label="User-uploaded datasets">{uploadedDatasets.map((dataset) => <option key={dataset.id} value={dataset.id}>{dataset.name}{dataset.country_iso3 ? ` — ${dataset.country_iso3}` : ""}{dataset.year ? ` · ${dataset.year}` : ""}</option>)}</optgroup>}
               </select>
-              {selected && <div className="mt-5 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-4"><div><p className="text-xs text-aic-muted">Rows</p><p className="font-bold text-aic-dark">{selected.row_count?.toLocaleString() ?? "Pending"}</p></div><div><p className="text-xs text-aic-muted">Columns</p><p className="font-bold text-aic-dark">{selected.column_count ?? "Pending"}</p></div><div><p className="text-xs text-aic-muted">Country</p><p className="font-bold text-aic-dark">{selected.country_iso3 || "—"}</p></div><div><p className="text-xs text-aic-muted">Status</p><p className="font-bold capitalize text-emerald-700">{selected.access_status}</p></div></div>}
+              {selected && <div className="mt-5 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-4"><div><p className="text-xs text-aic-muted">Rows</p><p className="font-bold text-aic-dark">{selected.row_count?.toLocaleString() ?? "Pending"}</p></div><div><p className="text-xs text-aic-muted">Columns</p><p className="font-bold text-aic-dark">{selected.column_count ?? "Pending"}</p></div><div><p className="text-xs text-aic-muted">Country</p><p className="font-bold text-aic-dark">{selected.country_iso3 || "—"}</p></div><div><p className="text-xs text-aic-muted">Source</p><p className="font-bold capitalize text-emerald-700">{selected.access_status === "user_upload" ? "Uploaded" : "AIC integrated"}</p></div></div>}
               <div className="mt-6 flex flex-wrap gap-3"><button className="btn-primary" disabled={!datasetId} onClick={() => setStage("quality")}>Review data quality →</button><Link className="btn-secondary" href="/microdata">Upload or map data</Link></div>
             </div>
             <aside className="rounded-2xl bg-aic-dark p-6 text-white"><h2 className="text-lg font-bold">Before analysis</h2><ul className="mt-5 space-y-5 text-sm"><li><strong className="block">Remove direct identifiers</strong><span className="mt-1 block text-slate-400">Do not include names, phone numbers or exact addresses.</span></li><li><strong className="block">Confirm research authority</strong><span className="mt-1 block text-slate-400">Ensure the project permits this use of the dataset.</span></li><li><strong className="block">Inspect variable mappings</strong><span className="mt-1 block text-slate-400">Automated recommendations depend on meaningful metadata.</span></li></ul><Link href="/privacy" className="mt-7 inline-block text-sm font-semibold text-emerald-300">Data protection policy →</Link></aside>
