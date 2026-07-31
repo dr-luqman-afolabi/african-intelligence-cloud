@@ -34,6 +34,7 @@ from app.routers.harveststat import router as harveststat_router
 from app.routers.forecast import router as forecast_router
 from app.routers.insights import router as insights_router
 from app.routers.spatial import router as spatial_router
+from app.routers.household_consumption import router as household_consumption_router
 import app.connectors.tier1 # noqa: F401 — triggers all register_connector() calls
 import app.connectors.tier2 # noqa: F401 — triggers all tier2 register_connector() calls
 import app.connectors.tier3 # noqa: F401 — triggers all tier3 register_connector() calls
@@ -221,6 +222,7 @@ app.include_router(harveststat_router, prefix="/api/v1")
 app.include_router(forecast_router, prefix="/api/v1")
 app.include_router(insights_router, prefix="/api/v1")
 app.include_router(spatial_router, prefix="/api/v1")
+app.include_router(household_consumption_router, prefix="/api/v1")
 
 @app.get("/health", tags=["Health"])
 def health():
