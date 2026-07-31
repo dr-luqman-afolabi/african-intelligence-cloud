@@ -20,7 +20,7 @@ _FILE_ROWS = [
     ["civ_ehcvm_w1","Côte d’Ivoire","CIV","EHCVM","Wave 1","2018-19","CI_EHCVM_W1_food_consumption_value_by_source.dta",34705627],
     ["civ_ehcvm_w2","Côte d’Ivoire","CIV","EHCVM","Wave 2","2021-22","CI_EHCVM_W2_food_consumption_value_by_source.dta",38437907],
     ["eth_ess_w3","Ethiopia","ETH","ESS","Wave 3","2015-16","Ethiopia_ESS_W3_food_consumption_value_by_source.dta",10501145],
-    ["eth_ess_w4","Ethiopia","ETH","ESS","Wave 4","2018-19","Ethiopia_ESS_W4_food_consumption_value_by_source.dta",15520009],
+    ["eth_ess_w4","Ethiopia","ETH","ESS","Wave 4","2018-19","Ethiopia_ESS_W4_food_consumption_value_by_source.dta",15520409],
     ["eth_ess_w5","Ethiopia","ETH","ESS","Wave 5","2021-22","Ethiopia_ESS_W5_food_consumption_value_by_source.dta",12307796],
     ["gnb_ehcvm_w1","Guinea-Bissau","GNB","EHCVM","Wave 1","2018-19","GB_EHCVM_W1_food_consumption_value_by_source.dta",14251560],
     ["gnb_ehcvm_w2","Guinea-Bissau","GNB","EHCVM","Wave 2","2021-22","GB_EHCVM_W2_food_consumption_value_by_source.dta",14324035],
