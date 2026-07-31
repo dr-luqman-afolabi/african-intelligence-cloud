@@ -133,6 +133,8 @@ export default function MicrodataDashboardPanel() {
         geo_variable: groupBy,
         welfare_variable: welfareVar,
         poverty_line: String(povertyLine),
+        country_iso3: countryIso3,
+        admin_level: adminLevel,
       });
       if (weightVar) params.set("weight_variable", weightVar);
       router.push(`/microdata/spatial?${params.toString()}`);
