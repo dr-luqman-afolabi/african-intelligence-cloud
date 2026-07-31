@@ -1219,3 +1219,50 @@ export async function fetchSeriesInsight(params: {
     return data;
   });
 }
+
+
+// ── EPAR harmonized household consumption by source ────────────────────────
+export interface ConsumptionDataset {
+  id: string;
+  country: string;
+  country_iso3: string;
+  survey: string;
+  wave: string;
+  years: string;
+  file_name: string;
+  size_bytes: number;
+  source_path: string;
+  download_url: string;
+}
+
+export interface ConsumptionMethodology {
+  unit_of_analysis: string;
+  sources: string[];
+  valuation: string;
+  annualization: string;
+  currency: string;
+  outliers: string;
+  weights: string;
+  household_covariates: string[];
+  safeguards: string[];
+}
+
+export interface ConsumptionCatalog {
+  source: string;
+  repository: string;
+  source_commit: string;
+  license: string;
+  license_notice: string;
+  dataset_count: number;
+  total_dataset_count: number;
+  country_count: number;
+  countries: string[];
+  surveys: string[];
+  datasets: ConsumptionDataset[];
+  methodology: ConsumptionMethodology;
+}
+
+export async function fetchConsumptionCatalog(params?: { country_iso3?: string; survey?: string }): Promise<ConsumptionCatalog> {
+  const { data } = await api.get<ConsumptionCatalog>("/consumption/catalog", { params });
+  return data;
+}
