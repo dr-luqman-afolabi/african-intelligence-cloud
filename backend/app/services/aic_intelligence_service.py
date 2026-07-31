@@ -90,6 +90,31 @@ def _extract_poverty_line(q: str) -> float | None:
     return None
 
 
+
+def _safe_cleaning_plan(
+    columns: list[dict[str, Any]],
+    targets: list[str],
+    question: str,
+) -> list[dict[str, Any]]:
+    """Cleaning advice must never prevent an otherwise valid analysis plan."""
+    try:
+        return cleaning.plan_cleaning(
+            _as_df_stub(columns),
+            target_columns=targets,
+            free_text=question,
+        )
+    except Exception:
+        return [
+            {
+                "kind": "standardize_columns",
+                "label": "Standardize column names (trim spaces, unify casing)",
+            },
+            {
+                "kind": "drop_empty",
+                "label": "Drop completely empty rows and columns",
+            },
+        ]
+
 def _heuristic_plan(question: str, columns: list[dict[str, Any]]) -> dict[str, Any]:
     analysis, spatial = _pick_analysis(question)
     domain = analysis.replace("spatial-", "")
@@ -147,9 +172,7 @@ def _heuristic_plan(question: str, columns: list[dict[str, Any]]) -> dict[str, A
             params["weight_variable"] = weight
         warnings.append("Diversification auto-detects crop/income/livelihood columns unless you specify them.")
 
-    cleaning_steps = cleaning.plan_cleaning(
-        _as_df_stub(columns), target_columns=targets, free_text=question,
-    )
+    cleaning_steps = _safe_cleaning_plan(columns, targets, question)
 
     rationale = (
         f"Matched your question to a {label.lower()} analysis"
@@ -218,7 +241,7 @@ User question: {json.dumps(question)}"""
         params = {}
     params.pop("dataset_id", None)
     targets = [v for k, v in params.items() if k in ("welfare_variable", "geography_variable", "geo_variable") and isinstance(v, str)]
-    cleaning_steps = cleaning.plan_cleaning(_as_df_stub(columns), target_columns=targets, free_text=question)
+    cleaning_steps = _safe_cleaning_plan(columns, targets, question)
     return {
         "analysis": analysis,
         "analysis_label": label,
