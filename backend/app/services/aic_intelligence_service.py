@@ -257,12 +257,10 @@ User question: {json.dumps(question)}"""
 
 
 def build_plan(question: str, columns: list[dict[str, Any]]) -> dict[str, Any]:
-    """Return an analysis plan dict. Tries Gemini, falls back to heuristic."""
-    if llm_provider.is_available():
-        try:
-            plan = _gemini_plan(question, columns)
-            if plan is not None:
-                return plan
-        except Exception:
-            pass
+    """Return a fast, deterministic plan for the approval-gated workflow.
+
+    External LLM calls are intentionally kept out of the request path: a slow
+    or unavailable provider must never prevent users from reaching the editable
+    analysis plan. AI interpretation remains available after execution.
+    """
     return _heuristic_plan(question, columns)
