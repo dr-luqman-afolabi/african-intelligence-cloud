@@ -83,6 +83,12 @@ async def upload_microdata_file(
     blob_name = build_storage_blob_name(country, survey, year, file_name)
 
     settings = get_settings()
+    if settings.app_env == "production" and (
+        settings.storage_backend != "gcs" or not settings.gcs_bucket_name
+    ):
+        raise RuntimeError(
+            "Durable microdata storage is not configured. Production uploads require GCS."
+        )
     if settings.storage_backend == "gcs" and settings.gcs_bucket_name:
         bucket = _get_bucket()
         blob = bucket.blob(blob_name)
@@ -108,4 +114,11 @@ def download_microdata_bytes(storage_path: str) -> bytes:
         bucket = _get_bucket()
         blob = bucket.blob(blob_name)
         return blob.download_as_bytes()
-    return Path(storage_path).read_bytes()
+    local_path = Path(storage_path)
+    if not local_path.exists():
+        raise FileNotFoundError(
+            "The dataset file is no longer available because it was stored on an older "
+            "ephemeral server revision. Re-upload the original file once; new uploads "
+            "are retained in durable Cloud Storage."
+        )
+    return local_path.read_bytes()

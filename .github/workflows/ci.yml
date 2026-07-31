@@ -119,7 +119,7 @@ jobs:
             --region ${{ env.REGION }} \
             --project ${{ env.PROJECT_ID }} \
             --platform managed \
-            --update-env-vars APP_ENV=production \
+            --update-env-vars APP_ENV=production,STORAGE_BACKEND=gcs,GCP_PROJECT_ID=${{ env.PROJECT_ID }},GCS_BUCKET_NAME=${{ env.PROJECT_ID }}-aic-datasets \
             --quiet
 
       - name: Run database migrations
