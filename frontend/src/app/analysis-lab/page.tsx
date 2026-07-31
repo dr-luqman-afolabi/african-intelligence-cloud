@@ -25,9 +25,9 @@ const STEPS: { id: Stage; label: string }[] = [
 ];
 
 const QUESTIONS = [
-  "Estimate the effect of rainfall, fertiliser use and access to credit on agricultural productivity.",
-  "What is the poverty rate by district and where are the hotspots?",
-  "How diversified are household incomes, and which groups are most vulnerable?",
+  "What is the poverty rate by district at a poverty line of 2.15?",
+  "Show me poverty hotspots across regions on a map.",
+  "How diversified are household incomes? Drop rows missing income.",
 ];
 
 function StepIcon({ done, number }: { done: boolean; number: number }) {
@@ -110,7 +110,6 @@ export default function AnalysisLabPage() {
       }
       const response = await runIntelligenceAnalysis(plan.endpoint, targetDataset, {
         ...parameterPayload(),
-        requested_engine: engine,
       });
       if (response.status === "failed") throw new Error(response.error_message || "Analysis failed");
       setResult(response);
@@ -140,11 +139,11 @@ export default function AnalysisLabPage() {
           <div className="max-w-3xl">
             <p className="section-label mb-3">Reproducible research</p>
             <h1 className="text-3xl font-bold tracking-tight text-aic-dark sm:text-4xl">Automated Analysis Lab</h1>
-            <p className="mt-3 text-base leading-7 text-aic-muted">From raw data to defensible evidence. Review every methodological choice before a single analysis runs.</p>
+            <p className="mt-3 text-base leading-7 text-aic-muted">From raw data to defensible evidence. Review every methodological choice before a single analysis runs through AIC’s current poverty, agriculture, diversification, or spatial engines.</p>
           </div>
           <div className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100" />
-            <div><p className="text-sm font-semibold text-emerald-900">Secure runtime available</p><p className="text-xs text-emerald-700">Authenticated · isolated · auditable</p></div>
+            <div><p className="text-sm font-semibold text-emerald-900">AIC analysis engine available</p><p className="text-xs text-emerald-700">Authenticated · approval-gated · auditable</p></div>
           </div>
         </div>
       </section>
@@ -177,7 +176,7 @@ export default function AnalysisLabPage() {
                 {!loading && !datasets.length && <option value="">No datasets available</option>}
                 {datasets.map((dataset) => <option key={dataset.id} value={dataset.id}>{dataset.name}{dataset.country_iso3 ? ` — ${dataset.country_iso3}` : ""}</option>)}
               </select>
-              {selected && <div className="mt-5 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-4"><div><p className="text-xs text-aic-muted">Rows</p><p className="font-bold text-aic-dark">{selected.row_count?.toLocaleString() ?? "Pending"}</p></div><div><p className="text-xs text-aic-muted">Columns</p><p className="font-bold text-aic-dark">{selected.column_count ?? "Pending"}</p></div><div><p className="text-xs text-aic-muted">Country</p><p className="font-bold text-aic-dark">{selected.country_iso3 || "—"}</p></div><div><p className="text-xs text-aic-muted">Status</p><p className="font-bold capitalize text-emerald-700">{selected.status}</p></div></div>}
+              {selected && <div className="mt-5 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-4"><div><p className="text-xs text-aic-muted">Rows</p><p className="font-bold text-aic-dark">{selected.row_count?.toLocaleString() ?? "Pending"}</p></div><div><p className="text-xs text-aic-muted">Columns</p><p className="font-bold text-aic-dark">{selected.column_count ?? "Pending"}</p></div><div><p className="text-xs text-aic-muted">Country</p><p className="font-bold text-aic-dark">{selected.country_iso3 || "—"}</p></div><div><p className="text-xs text-aic-muted">Status</p><p className="font-bold capitalize text-emerald-700">{selected.access_status}</p></div></div>}
               <div className="mt-6 flex flex-wrap gap-3"><button className="btn-primary" disabled={!datasetId} onClick={() => setStage("quality")}>Review data quality →</button><Link className="btn-secondary" href="/microdata">Upload or map data</Link></div>
             </div>
             <aside className="rounded-2xl bg-aic-dark p-6 text-white"><h2 className="text-lg font-bold">Before analysis</h2><ul className="mt-5 space-y-5 text-sm"><li><strong className="block">Remove direct identifiers</strong><span className="mt-1 block text-slate-400">Do not include names, phone numbers or exact addresses.</span></li><li><strong className="block">Confirm research authority</strong><span className="mt-1 block text-slate-400">Ensure the project permits this use of the dataset.</span></li><li><strong className="block">Inspect variable mappings</strong><span className="mt-1 block text-slate-400">Automated recommendations depend on meaningful metadata.</span></li></ul><Link href="/privacy" className="mt-7 inline-block text-sm font-semibold text-emerald-300">Data protection policy →</Link></aside>
@@ -197,7 +196,7 @@ export default function AnalysisLabPage() {
           <section className="grid gap-6 lg:grid-cols-2">
             <div className="card p-6 sm:p-8"><p className="section-label">03 · Research design</p><h2 className="mt-2 text-2xl font-bold text-aic-dark">Describe your question</h2><label className="mt-6 block text-sm font-semibold text-aic-dark">Research question</label><textarea className="input-field mt-2 min-h-28 resize-y" value={question} onChange={(event) => setQuestion(event.target.value)} />
               <div className="mt-3 flex flex-wrap gap-2">{QUESTIONS.slice(1).map((example) => <button key={example} type="button" onClick={() => setQuestion(example)} className="rounded-full bg-slate-100 px-3 py-1.5 text-left text-xs text-slate-600 hover:bg-slate-200">{example}</button>)}</div>
-              <label className="mt-6 block text-sm font-semibold text-aic-dark">Preferred engine</label><select className="input-field mt-2" value={engine} onChange={(event) => setEngine(event.target.value as Engine)}><option value="automatic">Automatic — AIC selects the specialist engine</option><option value="python">Python</option><option value="r">R</option><option value="both">Run both and compare</option></select>
+              <label className="mt-6 block text-sm font-semibold text-aic-dark">Preferred engine</label><select className="input-field mt-2" value={engine} onChange={(event) => setEngine(event.target.value as Engine)}><option value="automatic">Automatic — available now</option><option value="python" disabled>Python sandbox — coming soon</option><option value="r" disabled>R sandbox — coming soon</option><option value="both" disabled>Python + R comparison — coming soon</option></select>
               <button className="btn-primary mt-6" disabled={planning || !question.trim()} onClick={buildPlan}>{planning ? "Building defensible plan…" : plan ? "Refresh analysis plan" : "Build analysis plan"}</button>
             </div>
 
