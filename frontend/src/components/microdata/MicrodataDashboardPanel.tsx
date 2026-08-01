@@ -20,6 +20,20 @@ import { downloadCSV, exportChartAsPng } from "@/lib/exportUtils";
 
 type ChartType = (typeof CHART_TYPES)[number]["value"];
 
+function getAnalysisErrorMessage(error: unknown): string {
+  const response = (error as { response?: { data?: { detail?: unknown } } })?.response;
+  const detail = response?.data?.detail;
+  if (typeof detail === "string" && detail.trim()) return detail;
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item) => (typeof item === "object" && item && "msg" in item ? String(item.msg) : ""))
+      .filter(Boolean);
+    if (messages.length) return messages.join(" ");
+  }
+  if (error instanceof Error && error.message) return error.message;
+  return "Analysis failed. Check the selected variables.";
+}
+
 interface PovertySummary {
   headcount?: number;
   poverty_gap?: number;
@@ -157,8 +171,8 @@ export default function MicrodataDashboardPanel() {
       setSummary((res.summary_stats || {}) as PovertySummary);
       const tables = (res.tables || {}) as Record<string, unknown>;
       setRows(groupBy ? ((tables[groupBy] || []) as GroupPovertyRow[]) : []);
-    } catch {
-      setError("Analysis failed. Check the selected variables.");
+    } catch (analysisError) {
+      setError(getAnalysisErrorMessage(analysisError));
     } finally {
       setLoading(false);
     }
