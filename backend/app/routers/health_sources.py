@@ -102,8 +102,13 @@ def all_sources_health(
     all_ids = sorted(CONNECTOR_REGISTRY.keys())
     page_ids = all_ids[skip : skip + limit]
 
-    # Pull watermark data once for metadata augmentation
-    watermarks = {wm.source_id: wm for wm in list_watermarks(db)}
+    # Watermarks enrich the response but must never make source availability
+    # dependent on the optional operational metadata table.
+    try:
+        watermarks = {wm.source_id: wm for wm in list_watermarks(db)}
+    except Exception:
+        logger.exception("Could not load sync watermarks; returning health data without sync metadata")
+        watermarks = {}
 
     def _check_one(source_id: str) -> dict:
         try:

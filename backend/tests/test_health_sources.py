@@ -1,5 +1,7 @@
 """Tests for the /health/sources endpoint."""
 import time
+from datetime import datetime, timezone
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -74,4 +76,38 @@ def test_single_source_health_timeout(client: TestClient, monkeypatch):
     assert body["source_id"] == "slow_source"
     assert body["healthy"] is False
     assert body["message"] == "health check timed out"
+
+def test_health_sources_survives_unavailable_watermarks(client: TestClient, monkeypatch):
+    import app.routers.health_sources as health_router
+
+    class HealthyConnector:
+        def __init__(self, source_id: str):
+            self.source_id = source_id
+
+        def health_check(self):
+            return SimpleNamespace(
+                source_id=self.source_id,
+                healthy=True,
+                latency_ms=1.0,
+                message="ok",
+                checked_at=datetime.now(timezone.utc),
+            )
+
+    monkeypatch.setattr(
+        health_router,
+        "list_watermarks",
+        lambda _db: (_ for _ in ()).throw(RuntimeError("watermark table unavailable")),
+    )
+    monkeypatch.setattr(
+        health_router,
+        "get_connector",
+        lambda source_id: HealthyConnector(source_id),
+    )
+
+    resp = client.get("/api/v1/health/sources", params={"limit": 1})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body["sources"]) == 1
+    assert body["sources"][0]["healthy"] is True
+    assert body["sources"][0]["last_synced_at"] is None
 
