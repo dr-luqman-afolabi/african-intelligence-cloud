@@ -48,7 +48,7 @@ export default function Footer() {
             <Logo />
             <p className="mt-3 max-w-xs text-sm text-aic-muted">
               Macroeconomic data, microdata poverty analysis, and Africa-wide GIS mapping — policy
-              intelligence for every African country.
+              intelligence for African countries with available source data.
             </p>
             <p className="mt-3 max-w-xs text-sm text-aic-muted">
               An initiative of{" "}
