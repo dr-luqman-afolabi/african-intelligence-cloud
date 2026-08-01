@@ -87,7 +87,7 @@ function SpatialSetup() {
   const [welfareVariable, setWelfareVariable] = useState("");
   const [weightVariable, setWeightVariable] = useState("");
   const [countryIso3, setCountryIso3] = useState("RWA");
-  const [adminLevel, setAdminLevel] = useState("ADM2");
+  const [adminLevel, setAdminLevel] = useState("ADM1");
   const [povertyLine, setPovertyLine] = useState(100);
   const [loading, setLoading] = useState(true);
   const [variablesLoading, setVariablesLoading] = useState(false);
