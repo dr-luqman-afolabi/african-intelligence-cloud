@@ -26,6 +26,50 @@ function formatPercent(value: unknown) {
   return (value * 100).toFixed(1) + "%";
 }
 
+function normalizedVariableName(variable: MicrodataVariable) {
+  return `${variable.variable_name} ${variable.variable_label || ""}`.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+}
+
+function findVariable(variables: MicrodataVariable[], candidates: string[]) {
+  for (const candidate of candidates) {
+    const exact = variables.find((variable) => variable.variable_name.toLowerCase() === candidate);
+    if (exact) return exact.variable_name;
+  }
+  for (const candidate of candidates) {
+    const partial = variables.find((variable) => normalizedVariableName(variable).includes(candidate));
+    if (partial) return partial.variable_name;
+  }
+  return "";
+}
+
+function suggestSpatialVariables(variables: MicrodataVariable[], adminLevel: string) {
+  const geographyCandidates: Record<string, string[]> = {
+    ADM1: ["province", "region", "state", "adm1"],
+    ADM2: ["district", "county", "adm2"],
+    ADM3: ["sector", "subdistrict", "commune", "adm3"],
+    ADM0: ["country", "iso3", "adm0"],
+  };
+  return {
+    geography: findVariable(variables, geographyCandidates[adminLevel] || geographyCandidates.ADM2),
+    welfare: findVariable(variables, [
+      "cons1ae", "welfare", "consumption_per_adult", "consumption", "expenditure", "exp9", "income",
+    ]),
+    weight: findVariable(variables, ["pop_wt", "weight", "survey_weight", "hhweight", "sample_weight"]),
+  };
+}
+
+function isIdentifierVariable(name: string) {
+  return ["hhid", "household_id", "person_id", "pid", "uuid", "record_id"].includes(name.toLowerCase());
+}
+
+function getAnalysisErrorMessage(error: unknown) {
+  const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+  if (typeof detail === "string" && detail.trim()) return detail;
+  return error instanceof Error && error.message
+    ? error.message
+    : "Could not run spatial analysis. Please try again.";
+}
+
 interface MoransI {
   available?: boolean;
   moran_i?: number | null;
@@ -72,7 +116,13 @@ function SpatialSetup() {
     setWelfareVariable("");
     setWeightVariable("");
     fetchMicrodataVariables(datasetId)
-      .then(setVariables)
+      .then((items) => {
+        setVariables(items);
+        const suggested = suggestSpatialVariables(items, adminLevel);
+        setGeoVariable(suggested.geography);
+        setWelfareVariable(suggested.welfare);
+        setWeightVariable(suggested.weight);
+      })
       .catch(() => setError("The variables for this dataset could not be loaded."))
       .finally(() => setVariablesLoading(false));
     const selected = datasets.find((item) => item.id === datasetId);
@@ -82,6 +132,16 @@ function SpatialSetup() {
   function launch() {
     if (!datasetId || !geoVariable || !welfareVariable || povertyLine <= 0) {
       setError("Select a dataset, geography variable, welfare variable and a positive poverty line.");
+      return;
+    }
+    if (isIdentifierVariable(geoVariable)) {
+      const suggested = suggestSpatialVariables(variables, adminLevel).geography;
+      setError(
+        suggested
+          ? `"${geoVariable}" is an identifier, not a map geography. Use "${suggested}" for ${adminLevel}.`
+          : `"${geoVariable}" is an identifier, not a map geography. Select a province, region or district field.`,
+      );
+      if (suggested) setGeoVariable(suggested);
       return;
     }
     const params = new URLSearchParams({
@@ -132,7 +192,12 @@ function SpatialSetup() {
             </select>
           </label>
           <label className="text-sm font-medium text-slate-700">Administrative level
-            <select value={adminLevel} onChange={(event) => setAdminLevel(event.target.value)} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3">
+            <select value={adminLevel} onChange={(event) => {
+              const nextLevel = event.target.value;
+              setAdminLevel(nextLevel);
+              const suggested = suggestSpatialVariables(variables, nextLevel).geography;
+              if (suggested) setGeoVariable(suggested);
+            }} className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-3">
               {ADMIN_LEVELS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
             </select>
           </label>
@@ -152,6 +217,12 @@ function SpatialSetup() {
             <input type="number" min="0.01" step="0.01" value={povertyLine} onChange={(event) => setPovertyLine(Number(event.target.value))} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3" />
           </label>
         </div>
+        {variables.length > 0 && geoVariable && welfareVariable && (
+          <p className="mt-5 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+            Suggested automatically: {geoVariable} for {adminLevel}, {welfareVariable} for welfare
+            {weightVariable ? `, and ${weightVariable} for survey weights` : ""}. You can override these selections.
+          </p>
+        )}
         <div className="mt-7 flex flex-wrap items-center justify-between gap-3">
           <Link href="/microdata" className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium">Back to Microdata Studio</Link>
           <button onClick={launch} disabled={!datasetId || !geoVariable || !welfareVariable || povertyLine <= 0} className="rounded-lg bg-aic-green px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-40">Run analysis and open map →</button>
@@ -200,7 +271,7 @@ function SpatialResultsInner() {
           setResult(res);
         }
       })
-      .catch(() => setError("Could not run spatial analysis. Please try again."))
+      .catch((analysisError) => setError(getAnalysisErrorMessage(analysisError)))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [datasetId, welfareVariable, povertyLine, weightVariable, geoVariable, countryIso3, adminLevel, hasRequiredParameters]);
@@ -277,7 +348,7 @@ function SpatialResultsInner() {
                   <tbody>
                     {rankings.map((row, idx) => (
                       <tr key={idx} className="border-b border-slate-100">
-                        <td className="py-2 pr-4">{String(row.group ?? "—")}</td>
+                        <td className="py-2 pr-4">{String(row.group ?? row.geo_value ?? row[geoVariable] ?? "—")}</td>
                         <td className="py-2 pr-4">{formatPercent(row.headcount)}</td>
                         <td className="py-2 pr-4">{formatPercent(row.poverty_gap)}</td>
                         <td className="py-2 pr-4">{formatPercent(row.squared_poverty_gap)}</td>
