@@ -6,6 +6,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+import pandas as pd
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -217,6 +218,55 @@ def list_microdata_variables(
         .order_by(MicrodataVariable.variable_index)
         .all()
     )
+
+
+
+
+@router.get("/datasets/{dataset_id}/analysis-defaults")
+def get_microdata_analysis_defaults(
+    dataset_id: UUID,
+    db: Session = Depends(get_db),
+    current_user=Depends(_get_user),
+):
+    """Derive compatible poverty-analysis defaults from the stored survey.
+
+    When a survey provides its own poverty-line column, use its positive median.
+    Prefer a welfare aggregate expressed in the same price basis, plus the
+    strongest available survey weight and administrative geography.
+    """
+    dataset = _get_owned_dataset(db, dataset_id, current_user)
+    df = _load_dataset_dataframe(dataset)
+    columns = {str(column).lower(): str(column) for column in df.columns}
+
+    def first_column(candidates: list[str]) -> str | None:
+        for candidate in candidates:
+            if candidate.lower() in columns:
+                return columns[candidate.lower()]
+        return None
+
+    poverty_line_column = first_column([
+        "Poverty_line", "poverty_line", "national_poverty_line", "povline", "zref",
+    ])
+    poverty_line = None
+    if poverty_line_column:
+        values = pd.to_numeric(df[poverty_line_column], errors="coerce")
+        values = values[values > 0].dropna()
+        if not values.empty:
+            poverty_line = float(values.median())
+
+    welfare_candidates = (
+        ["sol_jan", "real_consumption", "real_welfare", "cons1ae", "welfare", "consumption"]
+        if poverty_line_column and "jan" in poverty_line_column.lower()
+        else ["cons1ae", "welfare", "real_consumption", "consumption", "sol_jan", "exp9", "income"]
+    )
+    return {
+        "welfare_variable": first_column(welfare_candidates),
+        "weight_variable": first_column(["pop_wt", "weight", "survey_weight", "hhweight"]),
+        "province_variable": first_column(["province", "region", "state", "adm1"]),
+        "district_variable": first_column(["district", "county", "adm2"]),
+        "poverty_line_variable": poverty_line_column,
+        "poverty_line": poverty_line,
+    }
 
 
 @router.get("/datasets/{dataset_id}/mapping/suggest", response_model=VariableMappingSuggestResponse)
