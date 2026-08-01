@@ -111,3 +111,24 @@ def test_health_sources_survives_unavailable_watermarks(client: TestClient, monk
     assert body["sources"][0]["healthy"] is True
     assert body["sources"][0]["last_synced_at"] is None
 
+
+
+def test_health_sources_snapshot_does_not_probe_connectors(client: TestClient, monkeypatch):
+    import app.routers.health_sources as health_router
+
+    def unexpected_probe(_source_id):
+        raise AssertionError("snapshot mode must not construct or probe connectors")
+
+    monkeypatch.setattr(health_router, "get_connector", unexpected_probe)
+
+    resp = client.get(
+        "/api/v1/health/sources",
+        params={"limit": 3, "probe": False},
+    )
+
+    assert resp.status_code == 200
+    body = resp.json()
+    assert len(body["sources"]) == 3
+    assert body["summary"]["unknown"] == 3
+    assert all(source["healthy"] is None for source in body["sources"])
+    assert all(source["message"] == "Registered; live probe pending" for source in body["sources"])
