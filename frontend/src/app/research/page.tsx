@@ -44,6 +44,7 @@ export default function ResearchPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault();
@@ -53,6 +54,7 @@ export default function ResearchPage() {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
+    setError(null);
 
     try {
       const history = messages.map((m) => ({ role: m.role, content: m.content }));
@@ -62,10 +64,7 @@ export default function ResearchPage() {
         { role: "assistant", content: res.answer, sources: res.sources },
       ]);
     } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "Failed to get a response. Please try again." },
-      ]);
+      setError("The research assistant is temporarily unavailable. Your message was not lost; please try again.");
     } finally {
       setLoading(false);
     }
@@ -101,6 +100,7 @@ export default function ResearchPage() {
         <div>
           <p className="text-sm font-semibold text-slate-700">AI Research Assistant</p>
           <p className="text-xs text-slate-400">Ask about African economic indicators and data</p>
+          <p className="mt-0.5 text-[11px] text-amber-700">AI responses may be incomplete. Verify important claims against the cited sources.</p>
         </div>
       </div>
 
@@ -150,8 +150,14 @@ export default function ResearchPage() {
           </div>
         ))}
 
+        {error && (
+          <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         {loading && (
-          <div className="flex justify-start">
+          <div className="flex justify-start" role="status" aria-live="polite">
             <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-none px-4 py-3 text-sm text-slate-400 shadow-sm">
               Thinking…
             </div>
@@ -162,6 +168,7 @@ export default function ResearchPage() {
       <div className="border-t border-slate-200 bg-white px-4 py-4">
         <form onSubmit={sendMessage} className="max-w-4xl mx-auto flex gap-2">
           <input
+            aria-label="Ask the AI research assistant"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about African economic data…"
