@@ -56,6 +56,7 @@ def test_single_source_health_unknown(client: TestClient):
     resp = client.get("/api/v1/health/sources/unknown_source_xyz")
     assert resp.status_code == 404
 
+
 def test_single_source_health_timeout(client: TestClient, monkeypatch):
     import app.routers.health_sources as health_router
 
