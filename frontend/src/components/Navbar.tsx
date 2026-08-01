@@ -58,6 +58,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -75,8 +76,14 @@ export default function Navbar() {
     const token = localStorage.getItem("aic_token");
     if (!token) return;
     fetchCurrentUser()
-      .then((u) => setIsAdmin(ADMIN_ROLES.has(u.role)))
-      .catch(() => {});
+      .then((u) => {
+        setIsAuthenticated(true);
+        setIsAdmin(ADMIN_ROLES.has(u.role));
+      })
+      .catch(() => {
+        setIsAuthenticated(false);
+        setIsAdmin(false);
+      });
   }, []);
 
   const linkActive = (href: string) => (href === "/" ? pathname === "/" : pathname?.startsWith(href));
@@ -149,12 +156,15 @@ export default function Navbar() {
         </div>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Link href="/profile" className="text-sm text-slate-300 transition hover:text-white">
-            Profile
-          </Link>
-          <Link href="/login" className="btn-primary !py-2 !px-4 text-sm">
-            Sign in
-          </Link>
+          {isAuthenticated ? (
+            <Link href="/profile" className="text-sm text-slate-300 transition hover:text-white">
+              Profile
+            </Link>
+          ) : (
+            <Link href="/login" className="btn-primary !py-2 !px-4 text-sm">
+              Sign in
+            </Link>
+          )}
         </div>
 
         <button
@@ -220,15 +230,18 @@ export default function Navbar() {
                 Admin
               </Link>
             )}
-            <Link
-              href="/profile"
-              className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
-            >
-              Profile
-            </Link>
-            <Link href="/login" className="btn-primary mt-2 !py-2.5 text-sm">
-              Sign in
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                href="/profile"
+                className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-300 transition hover:bg-white/5 hover:text-white"
+              >
+                Profile
+              </Link>
+            ) : (
+              <Link href="/login" className="btn-primary mt-2 !py-2.5 text-sm">
+                Sign in
+              </Link>
+            )}
           </div>
         </div>
       )}
