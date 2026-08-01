@@ -320,7 +320,7 @@ export default function ConnectorsPage() {
   useEffect(() => {
     fetchConnectors()
       .then(setConnectors)
-      .catch(() => setError("Failed to load connectors. Is the backend running?"))
+      .catch(() => setError("Connectors are temporarily unavailable. Please try again shortly."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -334,13 +334,15 @@ export default function ConnectorsPage() {
   });
 
   const grouped = groupByTier(filtered);
+  const liveCount = connectors.filter((c) => c.connector_status === "live").length;
+  const automatedCount = connectors.filter((c) => c.connector_registered).length;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-aic-dark mb-1">Data Connectors</h1>
         <p className="text-aic-muted text-sm">
-          {connectors.length} sources registered — click Health to probe, Sync to pull data
+          {connectors.length} catalogued sources · {liveCount} live · {automatedCount} automated connectors
         </p>
       </div>
 
