@@ -193,6 +193,7 @@ export default function SDGPage() {
   const [rawSeries, setRawSeries] = useState<SDGSeriesEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [dataLoading, setDataLoading] = useState(false);
+  const [dataError, setDataError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -208,11 +209,15 @@ export default function SDGPage() {
   useEffect(() => {
     if (!selectedGoal) return;
     setDataLoading(true);
+    setDataError(null);
     fetchSDGData(selectedGoal, selectedCountry || undefined)
       .then((res) => {
         setRawSeries((res.series ?? []) as SDGSeriesEntry[]);
       })
-      .catch(() => setRawSeries([]))
+      .catch(() => {
+        setRawSeries([]);
+        setDataError("Indicator data is temporarily unavailable. Please try another goal or country.");
+      })
       .finally(() => setDataLoading(false));
   }, [selectedGoal, selectedCountry]);
 
@@ -361,9 +366,13 @@ export default function SDGPage() {
                 <div className="h-64 flex items-center justify-center text-slate-400 text-sm bg-white rounded-xl border border-slate-200">
                   Loading chart data…
                 </div>
+              ) : dataError ? (
+                <div className="h-64 flex items-center justify-center px-6 text-center text-red-700 text-sm bg-red-50 rounded-xl border border-red-200">
+                  {dataError}
+                </div>
               ) : rawSeries.length === 0 ? (
-                <div className="h-64 flex items-center justify-center text-slate-400 text-sm bg-white rounded-xl border border-slate-200">
-                  No time-series data available for this goal{selectedCountry ? " and country" : ""}.
+                <div className="h-64 flex items-center justify-center px-6 text-center text-slate-500 text-sm bg-white rounded-xl border border-slate-200">
+                  No observations are currently available for this goal{selectedCountry ? " and country" : ""}. Coverage varies by source and reporting year.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
