@@ -88,6 +88,7 @@ def all_sources_health(
     limit: Annotated[int, Query(ge=1, le=200)] = 50,
     skip: Annotated[int, Query(ge=0)] = 0,
     healthy_only: bool = False,
+    probe: bool = True,
 ):
     """Return aggregated health status for all registered connectors.
 
@@ -109,6 +110,32 @@ def all_sources_health(
     except Exception:
         logger.exception("Could not load sync watermarks; returning health data without sync metadata")
         watermarks = {}
+
+    if not probe:
+        results = []
+        for source_id in page_ids:
+            wm = watermarks.get(source_id)
+            reg = CONNECTOR_REGISTRY.get(source_id, {})
+            results.append({
+                "source_id": source_id,
+                "source_name": reg.get("source_name", source_id),
+                "license_category": reg.get("license_category"),
+                "update_frequency": reg.get("update_frequency"),
+                "healthy": None,
+                "latency_ms": None,
+                "message": "Registered; live probe pending",
+                "checked_at": None,
+                "last_synced_at": (
+                    wm.last_synced_at.isoformat() if (wm and wm.last_synced_at) else None
+                ),
+                "records_synced": wm.records_synced if wm else None,
+            })
+        return {
+            "total_sources": len(all_ids),
+            "page": {"skip": skip, "limit": limit, "returned": len(results)},
+            "summary": {"healthy": 0, "unhealthy": 0, "unknown": len(results)},
+            "sources": results,
+        }
 
     def _check_one(source_id: str) -> dict:
         try:
@@ -166,6 +193,7 @@ def all_sources_health(
         "summary": {
             "healthy": healthy_count,
             "unhealthy": len(results) - healthy_count,
+            "unknown": sum(1 for r in results if r.get("healthy") is None),
         },
         "sources": results,
     }

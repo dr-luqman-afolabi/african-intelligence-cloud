@@ -83,15 +83,30 @@ export default function HealthPage() {
     const timeoutId = window.setTimeout(() => controller.abort(), 25_000);
 
     try {
-      const resp = await fetchSourcesHealth({ limit: 200, signal: controller.signal });
-      setData(resp);
+      // Render the registry snapshot first so this operational page never
+      // becomes empty merely because one or more upstream providers are slow.
+      const snapshot = await fetchSourcesHealth({
+        limit: 200,
+        probe: false,
+        signal: controller.signal,
+      });
+      setData(snapshot);
+      setLastRefreshed(new Date());
+
+      // Upgrade the snapshot with live probe results when they are available.
+      const live = await fetchSourcesHealth({
+        limit: 200,
+        probe: true,
+        signal: controller.signal,
+      });
+      setData(live);
       setLastRefreshed(new Date());
       setError(null);
     } catch {
       setError(
         controller.signal.aborted
-          ? "Health checks timed out after 25 seconds. Some upstream sources may be unavailable."
-          : "Failed to load health data. Please retry in a moment."
+          ? "Showing the latest registry snapshot; live probes exceeded 25 seconds."
+          : "Showing the latest registry snapshot; live probes are temporarily unavailable."
       );
     } finally {
       window.clearTimeout(timeoutId);
@@ -127,7 +142,7 @@ export default function HealthPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Source Health Dashboard</h1>
           <p className="text-sm text-slate-500 mt-0.5">
-            Real-time status for all registered data connectors
+            Registered source status with live availability probes
           </p>
         </div>
         <div className="flex items-center gap-3">
