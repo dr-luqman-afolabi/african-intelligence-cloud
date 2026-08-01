@@ -30,14 +30,14 @@ def _get_user(
 
 
 @router.get("")
-def list_all_connectors(current_user=Depends(_get_user)):
-    """List all registered data source connectors with their metadata."""
+def list_all_connectors():
+    """List public connector metadata; no credentials or private data are exposed."""
     return list_connectors()
 
 
 @router.get("/{source_id}/health")
-def connector_health(source_id: str, current_user=Depends(_get_user)):
-    """Probe the upstream source and return health status."""
+def connector_health(source_id: str):
+    """Probe public upstream availability without exposing private data."""
     try:
         status = get_health(source_id)
         return {
