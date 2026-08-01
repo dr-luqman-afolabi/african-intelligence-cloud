@@ -78,8 +78,9 @@ export default function HealthPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(null);
     const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 15_000);
+    const timeoutId = window.setTimeout(() => controller.abort(), 25_000);
 
     try {
       const resp = await fetchSourcesHealth({ limit: 200, signal: controller.signal });
@@ -89,7 +90,7 @@ export default function HealthPage() {
     } catch {
       setError(
         controller.signal.aborted
-          ? "Health checks timed out after 15 seconds. Some upstream sources may be unavailable."
+          ? "Health checks timed out after 25 seconds. Some upstream sources may be unavailable."
           : "Failed to load health data. Please retry in a moment."
       );
     } finally {
