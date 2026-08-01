@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  fetchMicrodataAnalysisDefaults,
   fetchMicrodataDatasets,
   fetchMicrodataVariables,
   runSpatialPovertyAnalysis,
@@ -115,13 +116,22 @@ function SpatialSetup() {
     setGeoVariable("");
     setWelfareVariable("");
     setWeightVariable("");
-    fetchMicrodataVariables(datasetId)
-      .then((items) => {
+    Promise.all([
+      fetchMicrodataVariables(datasetId),
+      fetchMicrodataAnalysisDefaults(datasetId).catch(() => null),
+    ])
+      .then(([items, defaults]) => {
         setVariables(items);
         const suggested = suggestSpatialVariables(items, adminLevel);
-        setGeoVariable(suggested.geography);
-        setWelfareVariable(suggested.welfare);
-        setWeightVariable(suggested.weight);
+        setGeoVariable(
+          (adminLevel === "ADM1" ? defaults?.province_variable : defaults?.district_variable)
+            || suggested.geography,
+        );
+        setWelfareVariable(defaults?.welfare_variable || suggested.welfare);
+        setWeightVariable(defaults?.weight_variable || suggested.weight);
+        if (typeof defaults?.poverty_line === "number" && defaults.poverty_line > 0) {
+          setPovertyLine(defaults.poverty_line);
+        }
       })
       .catch(() => setError("The variables for this dataset could not be loaded."))
       .finally(() => setVariablesLoading(false));
