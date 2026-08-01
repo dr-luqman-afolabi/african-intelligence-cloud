@@ -47,8 +47,8 @@ function fmtDate(iso: string | null) {
   });
 }
 
-function fmtLatency(ms: number | null) {
-  if (ms === null) return "—";
+function fmtLatency(ms: number | null | undefined) {
+  if (ms == null || !Number.isFinite(ms)) return "—";
   return ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`;
 }
 
