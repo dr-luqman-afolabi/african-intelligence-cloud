@@ -14,12 +14,14 @@ export default function SearchPage() {
     if (!query.trim()) return;
     setLoading(true);
     setError(null);
+    setSearched(false);
+    setResults([]);
     try {
       const res = await semanticSearch(query.trim());
       setResults(res);
       setSearched(true);
     } catch {
-      setError("Search failed. Make sure the backend is running.");
+      setError("Search is temporarily unavailable. Please try again shortly.");
     } finally {
       setLoading(false);
     }
@@ -31,12 +33,13 @@ export default function SearchPage() {
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-slate-800">Semantic Dataset Search</h1>
           <p className="text-sm text-slate-500">
-            Natural language search over all African economic indicators and datasets
+            Natural-language search across indexed African economic indicators and dataset metadata
           </p>
         </div>
 
         <form onSubmit={handleSearch} className="flex gap-2">
           <input
+            aria-label="Search indicators and datasets"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="e.g. unemployment rates in Sub-Saharan Africa…"
@@ -59,7 +62,7 @@ export default function SearchPage() {
 
         {searched && results.length === 0 && !loading && (
           <div className="text-center py-16 text-slate-400 text-sm">
-            No datasets found for &ldquo;{query}&rdquo;
+            No indexed datasets matched &ldquo;{query}&rdquo;. Try a broader topic, country, or indicator name.
           </div>
         )}
 
