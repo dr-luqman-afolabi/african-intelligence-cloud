@@ -256,7 +256,7 @@ def get_microdata_analysis_defaults(
 
     welfare_candidates = (
         ["sol_jan", "real_consumption", "real_welfare", "cons1ae", "welfare", "consumption"]
-        if poverty_line_column and "jan" in poverty_line_column.lower()
+        if poverty_line_column
         else ["cons1ae", "welfare", "real_consumption", "consumption", "sol_jan", "exp9", "income"]
     )
     return {
