@@ -716,6 +716,23 @@ export async function fetchMicrodataVariables(datasetId: string): Promise<Microd
   return data;
 }
 
+
+export interface MicrodataAnalysisDefaults {
+  welfare_variable: string | null;
+  weight_variable: string | null;
+  province_variable: string | null;
+  district_variable: string | null;
+  poverty_line_variable: string | null;
+  poverty_line: number | null;
+}
+
+export async function fetchMicrodataAnalysisDefaults(datasetId: string): Promise<MicrodataAnalysisDefaults> {
+  const { data } = await api.get<MicrodataAnalysisDefaults>(
+    `/microdata/datasets/${datasetId}/analysis-defaults`,
+  );
+  return data;
+}
+
 export async function runPovertyAnalysis(payload: PovertyAnalysisRequest): Promise<AnalysisResultResponse> {
   const { data } = await api.post<AnalysisResultResponse>("/microdata/analyze/poverty", payload);
   return data;
