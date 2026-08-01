@@ -42,8 +42,8 @@ export default function DatasetsPage() {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Datasets</h1>
-          <p className="text-sm text-slate-500 mt-1">{total} dataset{total !== 1 ? "s" : ""} available</p>
+          <h1 className="text-2xl font-bold text-slate-900">Workspace Datasets</h1>
+          <p className="text-sm text-slate-500 mt-1">{total} uploaded dataset{total !== 1 ? "s" : ""} in your workspace</p>
         </div>
         <Link
           href="/datasets/upload"
@@ -63,10 +63,17 @@ export default function DatasetsPage() {
         <div className="text-center py-16 text-slate-400">Loading…</div>
       ) : datasets.length === 0 ? (
         <div className="text-center py-16 text-slate-400">
-          No datasets yet.{" "}
-          <Link href="/datasets/upload" className="text-green-700 hover:underline">
-            Upload your first dataset.
-          </Link>
+          <p className="font-medium text-slate-600">No datasets have been uploaded to this workspace.</p>
+          <p className="mt-2 text-sm">
+            <Link href="/datasets/upload" className="text-green-700 hover:underline">
+              Upload a dataset
+            </Link>
+            {" or "}
+            <Link href="/surveys" className="text-green-700 hover:underline">
+              browse the external survey catalogue
+            </Link>
+            .
+          </p>
         </div>
       ) : (
         <>
