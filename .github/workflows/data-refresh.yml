@@ -1,0 +1,91 @@
+name: Automated data refresh
+
+on:
+  schedule:
+    - cron: "30 2 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: automated-data-refresh
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+  issues: write
+
+env:
+  REGION: africa-south1
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  BACKEND_URL: ${{ vars.API_URL }}
+  INCIDENT_TITLE: "Automated data refresh requires attention"
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - name: Execute managed refresh
+        id: refresh
+        continue-on-error: true
+        run: |
+          gcloud run jobs execute aic-data-refresh             --region "${REGION}"             --project "${PROJECT_ID}"             --wait --quiet
+
+      - name: Retry once after a failed execution
+        id: retry
+        if: steps.refresh.outcome == 'failure'
+        continue-on-error: true
+        run: |
+          gcloud run jobs execute aic-data-refresh             --region "${REGION}"             --project "${PROJECT_ID}"             --wait --quiet
+
+      - name: Validate live source health
+        id: verify
+        continue-on-error: true
+        run: |
+          response=$(curl --fail --silent --show-error             --retry 5 --retry-all-errors --retry-delay 10             --max-time 90 "${BACKEND_URL}/api/v1/health/sources?limit=200")
+          total=$(jq '.total' <<<"$response")
+          healthy=$(jq '[.sources[] | select(.status == "healthy")] | length' <<<"$response")
+          unavailable=$(jq '[.sources[] | select(.status == "unavailable")] | length' <<<"$response")
+          if [ "$total" -lt 1 ]; then
+            echo "Health response contains no registered sources"
+            exit 1
+          fi
+          {
+            echo "### Automated data refresh"
+            echo "- Registered sources: $total"
+            echo "- Healthy sources: $healthy"
+            echo "- Currently unavailable or unconfigured: $unavailable"
+            echo "- Completed: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open or update incident
+        if: (steps.refresh.outcome == 'failure' && steps.retry.outcome != 'success') || steps.verify.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          issue=$(gh issue list --state open --search "\"$INCIDENT_TITLE\" in:title" --json number --jq '.[0].number')
+          body="The scheduled refresh or its live health verification failed after the built-in retry. Workflow: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          if [ -n "$issue" ]; then
+            gh issue comment "$issue" --body "$body"
+          else
+            gh issue create --title "$INCIDENT_TITLE" --body "$body"
+          fi
+
+      - name: Resolve recovered incident
+        if: (steps.refresh.outcome == 'success' || steps.retry.outcome == 'success') && steps.verify.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          issue=$(gh issue list --state open --search "\"$INCIDENT_TITLE\" in:title" --json number --jq '.[0].number')
+          if [ -n "$issue" ]; then
+            gh issue close "$issue" --comment "The managed refresh and live health verification have recovered."
+          fi
+
+      - name: Enforce successful refresh
+        if: (steps.refresh.outcome == 'failure' && steps.retry.outcome != 'success') || steps.verify.outcome == 'failure'
+        run: exit 1

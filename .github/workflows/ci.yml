@@ -136,6 +136,35 @@ jobs:
             --project ${{ env.PROJECT_ID }} \
             --wait --quiet
 
+      - name: Configure managed data refresh job
+        run: |
+          IMAGE=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.ARTIFACT_REPO }}/backend:${{ github.sha }}
+          if gcloud run jobs describe aic-data-refresh --region "${{ env.REGION }}" --project "${{ env.PROJECT_ID }}" >/dev/null 2>&1; then
+            gcloud run jobs update aic-data-refresh \
+              --image "$IMAGE" \
+              --command python \
+              --args=-m,app.jobs.data_refresh \
+              --task-timeout=3600s \
+              --max-retries=1 \
+              --region "${{ env.REGION }}" \
+              --project "${{ env.PROJECT_ID }}" \
+              --quiet
+          else
+            gcloud run jobs create aic-data-refresh \
+              --image "$IMAGE" \
+              --command python \
+              --args=-m,app.jobs.data_refresh \
+              --task-timeout=3600s \
+              --max-retries=1 \
+              --set-secrets=DATABASE_URL=aic-database-url:latest,SECRET_KEY=aic-secret-key:latest \
+              --set-env-vars=GCP_PROJECT_ID=${{ env.PROJECT_ID }},APP_ENV=production,STORAGE_BACKEND=gcs,GCS_BUCKET_NAME=${{ env.PROJECT_ID }}-aic-datasets \
+              --set-cloudsql-instances=${{ env.PROJECT_ID }}:us-central1:aic-production-db \
+              --service-account=aic-backend-sa@${{ env.PROJECT_ID }}.iam.gserviceaccount.com \
+              --region "${{ env.REGION }}" \
+              --project "${{ env.PROJECT_ID }}" \
+              --quiet
+          fi
+
       - name: Deploy frontend to Cloud Run
         run: |
           gcloud run deploy aic-frontend \

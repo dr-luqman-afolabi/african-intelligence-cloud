@@ -64,15 +64,17 @@ def run_incremental_sync(db: Session, source_id: str) -> dict:
 
     Returns a summary dict: {source_id, records_fetched, cursor, status}.
     """
-    connector = get_connector(source_id)
+    try:
+        connector = get_connector(source_id)
+    except KeyError:
+        connector = None
     if connector is None:
-        logger.warning("Incremental sync: no connector for %s", source_id)
+        logger.info("Incremental sync skipped: no automated connector for %s", source_id)
         return {"source_id": source_id, "status": "no_connector", "records_fetched": 0}
 
-    wm = get_watermark(db, source_id)
-    since = wm.last_cursor if wm else None
-
     try:
+        wm = get_watermark(db, source_id)
+        since = wm.last_cursor if wm else None
         if hasattr(connector, "sync"):
             raw = connector.sync(since=since)
         else:
