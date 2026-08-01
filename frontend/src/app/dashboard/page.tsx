@@ -94,7 +94,7 @@ export default function Dashboard() {
       <PageHeader
         eyebrow="Macro data"
         title="Macro Dashboard"
-        description={`Historical macroeconomic, social, and environmental indicators from World Bank Open Data across ${countries.length || 54}+ African countries.`}
+        description={`Historical macroeconomic, social, and environmental indicators from World Bank Open Data across ${countries.length || 54} African countries.`}
       />
 
       <div className="flex flex-wrap gap-4 mb-6">
