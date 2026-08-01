@@ -28,3 +28,26 @@ Per DATA_SOURCE_REGISTRY.md, DHS Program and UNPS/LSMS are both classified Categ
 ## 5. Explicitly out of scope for this document
 
 - No database schema changes, no new API endpoints, and no frontend code have been written as part of this plan. This is a scoping document only, pending the decisions above.
+
+## 6. Status update (scaffold added)
+
+A dormant code scaffold has been added on the feature/microdata-gis-scaffold
+branch: backend/app/services/spatial_poverty_service.py and
+backend/app/routers/spatial_analysis.py. Neither is wired into main.py, and
+geopandas/shapely have NOT been added to requirements.txt yet, specifically
+to avoid affecting the live production build.
+
+Important operational note: this repository has an automatic CI/CD trigger
+that runs a full Cloud Build deploy (both backend and frontend, plus a DB
+migration job) on every push to main. Because of that, further scaffold or
+documentation changes should go through a pull request rather than a direct
+commit to main, so they do not trigger an unintended production deploy until
+a maintainer chooses to merge.
+
+Separately, during verification of the placeholder-URL fix, the recent
+auto-deploy build (commit fc334e9) resolved the previous blanket 403 "not
+authenticated" errors on aic-backend - requests now reach the application.
+However, the macro-data endpoint now returns a 503 due to an unrelated SQL
+error (a query referencing a column that does not match the current
+macro_data table schema). This is a separate backend bug from the auth
+issue and is not addressed by this feature plan.
