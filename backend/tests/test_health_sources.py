@@ -120,6 +120,7 @@ def test_health_sources_snapshot_does_not_probe_connectors(client: TestClient, m
         raise AssertionError("snapshot mode must not construct or probe connectors")
 
     monkeypatch.setattr(health_router, "get_connector", unexpected_probe)
+    monkeypatch.setattr(health_router, "list_watermarks", unexpected_probe)
 
     resp = client.get(
         "/api/v1/health/sources",

@@ -103,18 +103,12 @@ def all_sources_health(
     all_ids = sorted(CONNECTOR_REGISTRY.keys())
     page_ids = all_ids[skip : skip + limit]
 
-    # Watermarks enrich the response but must never make source availability
-    # dependent on the optional operational metadata table.
-    try:
-        watermarks = {wm.source_id: wm for wm in list_watermarks(db)}
-    except Exception:
-        logger.exception("Could not load sync watermarks; returning health data without sync metadata")
-        watermarks = {}
-
+    # Snapshot mode is deliberately independent of the database and every
+    # upstream provider. It must remain available during migrations, database
+    # incidents, and connector timeouts so the operational UI is never empty.
     if not probe:
         results = []
         for source_id in page_ids:
-            wm = watermarks.get(source_id)
             reg = CONNECTOR_REGISTRY.get(source_id, {})
             results.append({
                 "source_id": source_id,
@@ -125,10 +119,8 @@ def all_sources_health(
                 "latency_ms": None,
                 "message": "Registered; live probe pending",
                 "checked_at": None,
-                "last_synced_at": (
-                    wm.last_synced_at.isoformat() if (wm and wm.last_synced_at) else None
-                ),
-                "records_synced": wm.records_synced if wm else None,
+                "last_synced_at": None,
+                "records_synced": None,
             })
         return {
             "total_sources": len(all_ids),
@@ -136,6 +128,14 @@ def all_sources_health(
             "summary": {"healthy": 0, "unhealthy": 0, "unknown": len(results)},
             "sources": results,
         }
+
+    # Watermarks enrich live results but must never make source availability
+    # dependent on the optional operational metadata table.
+    try:
+        watermarks = {wm.source_id: wm for wm in list_watermarks(db)}
+    except Exception:
+        logger.exception("Could not load sync watermarks; returning health data without sync metadata")
+        watermarks = {}
 
     def _check_one(source_id: str) -> dict:
         try:
