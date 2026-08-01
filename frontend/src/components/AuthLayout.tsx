@@ -3,7 +3,7 @@ import Logo from "@/components/ui/Logo";
 const HIGHLIGHTS = [
   "Upload household surveys and compute poverty & inequality indices instantly",
   "Africa-wide GIS choropleth maps with Moran's I and LISA cluster analysis",
-  "30 years of macroeconomic data across every African country",
+  "Long-run macroeconomic data across 54 indexed African countries",
 ];
 
 export default function AuthLayout({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
