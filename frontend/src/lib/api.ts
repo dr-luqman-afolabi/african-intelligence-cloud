@@ -231,7 +231,7 @@ export interface SourceHealthEntry {
 export interface HealthSourcesResponse {
   total_sources: number;
   page: { skip: number; limit: number; returned: number };
-  summary: { healthy: number; unhealthy: number };
+  summary: { healthy: number; unhealthy: number; unknown?: number };
   sources: SourceHealthEntry[];
 }
 
@@ -241,6 +241,7 @@ export async function fetchSourcesHealth(params?: {
   limit?: number;
   skip?: number;
   healthy_only?: boolean;
+  probe?: boolean;
   signal?: AbortSignal;
 }): Promise<HealthSourcesResponse> {
   const { signal, ...queryParams } = params ?? {};
