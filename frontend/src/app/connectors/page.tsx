@@ -88,6 +88,7 @@ function ConnectorRow({ connector }: ConnectorRowProps) {
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
   const [syncErr, setSyncErr] = useState<string | null>(null);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const canOperate = connector.connector_registered && connector.connector_status === "live";
 
   const checkHealth = useCallback(async () => {
     setHealthLoading(true);
@@ -164,20 +165,24 @@ function ConnectorRow({ connector }: ConnectorRowProps) {
           </span>
           <button
             onClick={checkHealth}
-            disabled={healthLoading}
+            disabled={healthLoading || !canOperate}
+            title={canOperate ? "Probe this source" : "Available for live automated connectors only"}
             className="text-xs px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 disabled:opacity-50 transition"
           >
-            {healthLoading ? "…" : "Health"}
+            {healthLoading ? "Checking…" : "Health"}
           </button>
           <button
             onClick={handleSync}
-            disabled={syncing}
+            disabled={syncing || !canOperate}
+            title={canOperate ? "Start a data sync" : "Available for live automated connectors only"}
             className="text-xs px-2.5 py-1 rounded-lg bg-aic-green text-white hover:bg-green-700 disabled:opacity-50 transition font-medium"
           >
             {syncing ? "Syncing…" : "Sync"}
           </button>
           <button
             onClick={handleExpand}
+            aria-expanded={expanded}
+            aria-label={expanded ? `Collapse ${connector.source_name} details` : `Expand ${connector.source_name} details`}
             className="text-xs px-2 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 transition"
           >
             {expanded ? "▲" : "▼"}
