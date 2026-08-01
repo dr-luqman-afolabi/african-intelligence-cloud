@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   fetchMacroData,
   fetchCountries,
@@ -33,15 +33,19 @@ export default function Dashboard() {
     fetchIndicators().then(setIndicators).catch(() => setIndicators([]));
   }, []);
 
-  useEffect(() => {
+  const loadMacroData = useCallback(() => {
     setLoading(true);
     setError(null);
     setInterpretation(null);
     fetchMacroData(country)
       .then(setData)
-      .catch(() => setError("Failed to load data. Make sure the backend is running."))
+      .catch(() => setError("Macroeconomic data is temporarily unavailable. Please try again."))
       .finally(() => setLoading(false));
   }, [country]);
+
+  useEffect(() => {
+    loadMacroData();
+  }, [loadMacroData]);
 
   function toggleIndicator(code: string) {
     setSelectedCodes((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
@@ -94,7 +98,7 @@ export default function Dashboard() {
       <PageHeader
         eyebrow="Macro data"
         title="Macro Dashboard"
-        description={`Historical macroeconomic, social, and environmental indicators from World Bank Open Data across ${countries.length || 54}+ African countries.`}
+        description={`Historical macroeconomic, social, and environmental indicators from World Bank Open Data across ${countries.length || 54} African countries.`}
       />
 
       <div className="flex flex-wrap gap-4 mb-6">
@@ -136,7 +140,19 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6">{error}</div>}
+      {error && (
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6">
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={loadMacroData}
+            disabled={loading}
+            className="text-sm font-semibold underline underline-offset-2 disabled:opacity-50"
+          >
+            Try again
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center h-64">

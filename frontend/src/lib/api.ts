@@ -241,8 +241,13 @@ export async function fetchSourcesHealth(params?: {
   limit?: number;
   skip?: number;
   healthy_only?: boolean;
+  signal?: AbortSignal;
 }): Promise<HealthSourcesResponse> {
-  const { data } = await api.get<HealthSourcesResponse>("/health/sources", { params });
+  const { signal, ...queryParams } = params ?? {};
+  const { data } = await api.get<HealthSourcesResponse>("/health/sources", {
+    params: queryParams,
+    signal,
+  });
   return data;
 }
 

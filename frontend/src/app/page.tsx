@@ -2,8 +2,8 @@ import Link from "next/link";
 import Logo from "@/components/ui/Logo";
 
 const STATS = [
-  { value: "54", label: "African countries supported" },
-  { value: "30+", label: "Macro indicators tracked" },
+  { value: "54", label: "African countries indexed" },
+  { value: "30+", label: "Macro indicators catalogued" },
   { value: "FGT0–2", label: "Poverty indices computed" },
   { value: "Moran's I", label: "Spatial clustering analysis" },
 ];
@@ -40,8 +40,8 @@ const FEATURES = [
     icon: <path d="M4 21V9M12 21V3M20 21v-7" strokeLinecap="round" />,
   },
   {
-    title: "40+ Data Connectors",
-    description: "Live health monitoring across World Bank, DHS, HDX, IPUMS, and dozens more African-focused data sources.",
+    title: "46-source Data Registry",
+    description: "Explore live, planned, and restricted sources across World Bank, DHS, HDX, IPUMS, and other African-focused providers, with transparent status monitoring.",
     href: "/connectors",
     icon: <path d="M12 2a10 10 0 100 20 10 10 0 000-20zM2 12h20M12 2a15 15 0 010 20 15 15 0 010-20z" strokeLinecap="round" />,
   },
@@ -68,7 +68,7 @@ export default function Home() {
             style={{ animationDelay: "0.1s" }}
           >
             Macroeconomic data, household microdata poverty analysis, and Africa-wide GIS mapping —
-            in one platform, for every African country.
+            in one platform, built for African policy and research workflows.
           </p>
 
           <div
@@ -106,8 +106,8 @@ export default function Home() {
           <p className="section-label">Everything in one place</p>
           <h2 className="mt-2 text-3xl font-bold text-aic-dark">A comprehensive intelligence toolkit</h2>
           <p className="mt-3 text-aic-muted">
-            From macro trends to household-level poverty mapping, AIC brings every layer of African
-            development data into a single, interactive platform.
+            From macro trends to household-level poverty mapping, AIC brings connected African
+            development data into a single, interactive workspace.
           </p>
         </div>
 

@@ -88,6 +88,7 @@ function ConnectorRow({ connector }: ConnectorRowProps) {
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
   const [syncErr, setSyncErr] = useState<string | null>(null);
   const [historyLoaded, setHistoryLoaded] = useState(false);
+  const canOperate = connector.connector_registered && connector.connector_status === "live";
 
   const checkHealth = useCallback(async () => {
     setHealthLoading(true);
@@ -164,20 +165,24 @@ function ConnectorRow({ connector }: ConnectorRowProps) {
           </span>
           <button
             onClick={checkHealth}
-            disabled={healthLoading}
+            disabled={healthLoading || !canOperate}
+            title={canOperate ? "Probe this source" : "Available for live automated connectors only"}
             className="text-xs px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 disabled:opacity-50 transition"
           >
-            {healthLoading ? "…" : "Health"}
+            {healthLoading ? "Checking…" : "Health"}
           </button>
           <button
             onClick={handleSync}
-            disabled={syncing}
+            disabled={syncing || !canOperate}
+            title={canOperate ? "Start a data sync" : "Available for live automated connectors only"}
             className="text-xs px-2.5 py-1 rounded-lg bg-aic-green text-white hover:bg-green-700 disabled:opacity-50 transition font-medium"
           >
             {syncing ? "Syncing…" : "Sync"}
           </button>
           <button
             onClick={handleExpand}
+            aria-expanded={expanded}
+            aria-label={expanded ? `Collapse ${connector.source_name} details` : `Expand ${connector.source_name} details`}
             className="text-xs px-2 py-1 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 transition"
           >
             {expanded ? "▲" : "▼"}
@@ -320,7 +325,7 @@ export default function ConnectorsPage() {
   useEffect(() => {
     fetchConnectors()
       .then(setConnectors)
-      .catch(() => setError("Failed to load connectors. Is the backend running?"))
+      .catch(() => setError("Connectors are temporarily unavailable. Please try again shortly."))
       .finally(() => setLoading(false));
   }, []);
 
@@ -334,13 +339,15 @@ export default function ConnectorsPage() {
   });
 
   const grouped = groupByTier(filtered);
+  const liveCount = connectors.filter((c) => c.connector_status === "live").length;
+  const automatedCount = connectors.filter((c) => c.connector_registered).length;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-aic-dark mb-1">Data Connectors</h1>
         <p className="text-aic-muted text-sm">
-          {connectors.length} sources registered — click Health to probe, Sync to pull data
+          {connectors.length} catalogued sources · {liveCount} live · {automatedCount} automated connectors
         </p>
       </div>
 

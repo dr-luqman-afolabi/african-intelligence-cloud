@@ -31,6 +31,7 @@ export default function MicrodataPage() {
   const [selectedDataset, setSelectedDataset] = useState<MicrodataDataset | null>(null);
   const [variables, setVariables] = useState<MicrodataVariable[]>([]);
   const [loadingVariables, setLoadingVariables] = useState(false);
+  const [variablesError, setVariablesError] = useState<string | null>(null);
 
   const [welfareVariable, setWelfareVariable] = useState("");
   const [weightVariable, setWeightVariable] = useState("");
@@ -59,8 +60,12 @@ export default function MicrodataPage() {
 
   async function handleUpload(e: FormEvent) {
     e.preventDefault();
-    if (!file || !name) {
+    if (!file || !name.trim()) {
       setUploadError("Please provide a dataset name and choose a file.");
+      return;
+    }
+    if (countryIso3 && !/^[A-Z]{3}$/.test(countryIso3)) {
+      setUploadError("Country must be a three-letter ISO code, such as RWA or NGA.");
       return;
     }
     setUploading(true);
@@ -69,7 +74,7 @@ export default function MicrodataPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("name", name);
+      formData.append("name", name.trim());
       if (countryIso3) formData.append("country_iso3", countryIso3);
 
       const dataset = await uploadMicrodata(formData);
@@ -88,6 +93,7 @@ export default function MicrodataPage() {
   async function handleSelectDataset(dataset: MicrodataDataset) {
     setSelectedDataset(dataset);
     setVariables([]);
+    setVariablesError(null);
     setWelfareVariable("");
     setWeightVariable("");
     setGeographyVariable("");
@@ -100,6 +106,7 @@ export default function MicrodataPage() {
       setVariables(vars);
     } catch {
       setVariables([]);
+      setVariablesError("Variables could not be loaded for this dataset. Please try selecting it again.");
     } finally {
       setLoadingVariables(false);
     }
@@ -187,7 +194,10 @@ export default function MicrodataPage() {
       </section>
 
       <section className="bg-white rounded-xl p-6 shadow-sm border border-slate-100 mb-10">
-        <h2 className="text-xl font-semibold text-aic-dark mb-4">Upload a dataset</h2>
+        <h2 className="text-xl font-semibold text-aic-dark mb-2">Upload a dataset</h2>
+        <p className="mb-4 text-sm text-slate-500">
+          Upload only data you are authorized to process. Remove direct personal identifiers before uploading household-level records.
+        </p>
         <form onSubmit={handleUpload} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="sm:col-span-1">
             <label className="block text-sm font-medium text-aic-dark mb-1">Dataset name</label>
@@ -240,7 +250,12 @@ export default function MicrodataPage() {
         {loadingDatasets ? (
           <p className="text-aic-muted">Loading datasets...</p>
         ) : datasetsError ? (
-          <p className="text-aic-red">{datasetsError}</p>
+          <div className="flex flex-wrap items-center gap-3 text-aic-red">
+            <p>{datasetsError}</p>
+            <button type="button" onClick={loadDatasets} className="text-sm font-semibold underline underline-offset-2">
+              Try again
+            </button>
+          </div>
         ) : datasets.length === 0 ? (
           <p className="text-aic-muted">No datasets available yet — upload one to get started.</p>
         ) : (
@@ -292,6 +307,10 @@ export default function MicrodataPage() {
           </h2>
           {loadingVariables ? (
             <p className="text-aic-muted">Loading variables...</p>
+          ) : variablesError ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {variablesError}
+            </div>
           ) : variables.length === 0 ? (
             <p className="text-aic-muted">No variables found for this dataset.</p>
           ) : (

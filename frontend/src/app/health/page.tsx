@@ -77,14 +77,23 @@ export default function HealthPage() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const load = useCallback(async () => {
+    setLoading(true);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 15_000);
+
     try {
-      const resp = await fetchSourcesHealth({ limit: 200 });
+      const resp = await fetchSourcesHealth({ limit: 200, signal: controller.signal });
       setData(resp);
       setLastRefreshed(new Date());
       setError(null);
     } catch {
-      setError("Failed to load health data — is the backend running?");
+      setError(
+        controller.signal.aborted
+          ? "Health checks timed out after 15 seconds. Some upstream sources may be unavailable."
+          : "Failed to load health data. Please retry in a moment."
+      );
     } finally {
+      window.clearTimeout(timeoutId);
       setLoading(false);
     }
   }, []);
@@ -175,8 +184,16 @@ export default function HealthPage() {
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">
-          {error}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={load}
+            disabled={loading}
+            className="font-semibold underline underline-offset-2 disabled:opacity-50"
+          >
+            Try again
+          </button>
         </div>
       )}
 

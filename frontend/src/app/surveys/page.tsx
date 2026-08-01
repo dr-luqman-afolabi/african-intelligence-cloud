@@ -15,6 +15,13 @@ function AccessBadge({ requiresApproval, redistributionAllowed }: { requiresAppr
   return <span className="px-1.5 py-0.5 rounded text-xs font-medium uppercase bg-blue-100 text-blue-800">Restricted</span>;
 }
 
+function formatTopic(topic: string) {
+  return topic
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 export default function SurveysPage() {
   const [surveys, setSurveys] = useState<SurveyEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +34,7 @@ export default function SurveysPage() {
         setSurveys(data);
         setError(null);
       })
-      .catch(() => setError("Failed to load survey catalog — is the backend running?"))
+      .catch(() => setError("The survey catalogue is temporarily unavailable. Please try again shortly."))
       .finally(() => setLoading(false));
   }, []);
   
@@ -56,7 +63,7 @@ export default function SurveysPage() {
           topicFilter === t ? "bg-aic-dark text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
           )}
         >
-        {t}
+        {formatTopic(t)}
       </button>
       ))}
     </div>
@@ -75,7 +82,7 @@ export default function SurveysPage() {
         <AccessBadge requiresApproval={s.requires_approval} redistributionAllowed={s.redistribution_allowed} />
         </div>
         <div className="text-xs text-slate-400">
-          {s.series} · {s.primary_topic}
+          {s.series} · {formatTopic(s.primary_topic)}
           {s.country_iso3 ? ` · ${s.country_iso3}` : ""}
         </div>
           {s.microdata_available && (

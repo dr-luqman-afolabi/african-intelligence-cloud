@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from concurrent.futures import ThreadPoolExecutor, wait
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError, wait
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -48,8 +48,9 @@ def source_health(source_id: str, db: Session = Depends(get_db)):
     except KeyError:
         raise HTTPException(status_code=404, detail=f"No connector registered for source_id='{source_id}'")
 
+    future = _HEALTH_CHECK_POOL.submit(connector.health_check)
     try:
-        status = connector.health_check()
+        status = future.result(timeout=_AGGREGATE_DEADLINE_SECONDS)
         return {
             "source_id": status.source_id,
             "healthy": status.healthy,
@@ -57,9 +58,24 @@ def source_health(source_id: str, db: Session = Depends(get_db)):
             "message": status.message,
             "checked_at": status.checked_at.isoformat(),
         }
+    except FutureTimeoutError:
+        logger.warning("Health check timed out for %s", source_id)
+        return {
+            "source_id": source_id,
+            "healthy": False,
+            "latency_ms": None,
+            "message": "health check timed out",
+            "checked_at": None,
+        }
     except Exception as exc:
         logger.exception("Health check failed for %s", source_id)
-        return {"source_id": source_id, "healthy": False, "message": str(exc)}
+        return {
+            "source_id": source_id,
+            "healthy": False,
+            "latency_ms": None,
+            "message": str(exc),
+            "checked_at": None,
+        }
 
 
 # ---------------------------------------------------------------------------

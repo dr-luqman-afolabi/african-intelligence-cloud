@@ -1,4 +1,6 @@
 """Tests for the /health/sources endpoint."""
+import time
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -53,3 +55,23 @@ def test_single_source_health(client: TestClient):
 def test_single_source_health_unknown(client: TestClient):
     resp = client.get("/api/v1/health/sources/unknown_source_xyz")
     assert resp.status_code == 404
+
+
+def test_single_source_health_timeout(client: TestClient, monkeypatch):
+    import app.routers.health_sources as health_router
+
+    class SlowConnector:
+        @staticmethod
+        def health_check():
+            time.sleep(0.05)
+
+    monkeypatch.setattr(health_router, "get_connector", lambda _source_id: SlowConnector())
+    monkeypatch.setattr(health_router, "_AGGREGATE_DEADLINE_SECONDS", 0.001)
+
+    resp = client.get("/api/v1/health/sources/slow_source")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["source_id"] == "slow_source"
+    assert body["healthy"] is False
+    assert body["message"] == "health check timed out"
+
