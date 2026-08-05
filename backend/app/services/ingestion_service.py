@@ -28,8 +28,16 @@ def ingest_records(db: Session, source_id: str, records: list[dict]) -> int:
     written = 0
 
     for rec in records:
-        iso3 = rec.get("country_iso3", "").upper()
-        code = rec.get("indicator_code", "")
+        # Catalogue-style sources (DOI indexes, survey/microdata listings) emit
+        # records that aren't country-indicator series at all — missing or null
+        # country_iso3, or not even a mapping. They have nothing to contribute
+        # to macro_data, so skip them rather than raising: a `.get(k, "")` on a
+        # key that exists with a None value returns None, and None.upper()
+        # would abort the whole source's ingestion.
+        if not isinstance(rec, dict):
+            continue
+        iso3 = (rec.get("country_iso3") or "").upper()
+        code = rec.get("indicator_code") or ""
         year = rec.get("year")
         value = rec.get("value")
 

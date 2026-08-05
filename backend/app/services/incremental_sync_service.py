@@ -88,8 +88,18 @@ def run_incremental_sync(db: Session, source_id: str) -> dict:
         # Persist. Without this the run fetched data, counted it, advanced the
         # watermark and threw the records away — so every execution "succeeded"
         # while macro_data stayed empty.
+        # A source can fetch perfectly well and still have nothing to persist
+        # here (catalogue sources aren't macro_data series). Treat an ingestion
+        # problem as "fetched, wrote nothing" rather than failing the source —
+        # otherwise one unwritable source can make every source error and, since
+        # the job exits non-zero when nothing succeeds, fail the whole run.
         from app.services.ingestion_service import ingest_records
-        written = ingest_records(db, source_id, records)
+        try:
+            written = ingest_records(db, source_id, records)
+        except Exception:
+            logger.exception("Ingestion failed for %s; recording 0 written", source_id)
+            db.rollback()
+            written = 0
 
         # Cursor = ISO timestamp of this sync run
         new_cursor = datetime.now(timezone.utc).isoformat()
