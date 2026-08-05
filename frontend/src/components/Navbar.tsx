@@ -10,10 +10,9 @@ type NavLink = { href: string; label: string; external?: boolean };
 type NavGroup = { label: string; items: NavLink[] };
 type NavEntry = NavLink | NavGroup;
 
-// Hosted JupyterHub (Python/R notebooks) — separate service, so it's an
-// absolute URL. Swap this one constant when the branded studio.hyrin.org
-// DNS record is in place.
-const ANALYTICS_STUDIO_URL = "https://34-35-160-65.sslip.io";
+// Hosted JupyterHub (Python/R notebooks) — a separate service, so this is an
+// absolute URL rather than an app route.
+const ANALYTICS_STUDIO_URL = "https://studio.hyrin.org";
 
 const NAV: NavEntry[] = [
   { href: "/dashboard", label: "Dashboard" },
