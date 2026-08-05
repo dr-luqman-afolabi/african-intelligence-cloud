@@ -6,9 +6,14 @@ import clsx from "clsx";
 import Logo from "@/components/ui/Logo";
 import { fetchCurrentUser } from "@/lib/api";
 
-type NavLink = { href: string; label: string };
+type NavLink = { href: string; label: string; external?: boolean };
 type NavGroup = { label: string; items: NavLink[] };
 type NavEntry = NavLink | NavGroup;
+
+// Hosted JupyterHub (Python/R notebooks) — separate service, so it's an
+// absolute URL. Swap this one constant when the branded studio.hyrin.org
+// DNS record is in place.
+const ANALYTICS_STUDIO_URL = "https://34-35-160-65.sslip.io";
 
 const NAV: NavEntry[] = [
   { href: "/dashboard", label: "Dashboard" },
@@ -22,6 +27,7 @@ const NAV: NavEntry[] = [
       { href: "/consumption", label: "Consumption Observatory" },
       { href: "/forecast", label: "Forecasting" },
       { href: "/microdata/explorer", label: "Spatial Explorer" },
+      { href: ANALYTICS_STUDIO_URL, label: "Analytics Studio ↗", external: true },
     ],
   },
   {
@@ -41,6 +47,23 @@ const NAV: NavEntry[] = [
 
 function isGroup(entry: NavEntry): entry is NavGroup {
   return (entry as NavGroup).items !== undefined;
+}
+
+/** Renders a nav item as a client-side Link, or a new-tab anchor when the
+ *  destination is a separate service (e.g. the hosted JupyterHub). */
+function NavItem({ item, className }: { item: NavLink; className: string }) {
+  if (item.external) {
+    return (
+      <a href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
+        {item.label}
+      </a>
+    );
+  }
+  return (
+    <Link href={item.href} className={className}>
+      {item.label}
+    </Link>
+  );
 }
 
 const ADMIN_ROLES = new Set(["super_admin", "org_admin"]);
@@ -120,16 +143,14 @@ export default function Navbar() {
                 <div className="absolute left-0 top-full hidden pt-2 group-hover:block">
                   <div className="min-w-[210px] overflow-hidden rounded-xl border border-white/10 bg-aic-dark py-1 shadow-xl">
                     {entry.items.map((item) => (
-                      <Link
+                      <NavItem
                         key={item.href}
-                        href={item.href}
+                        item={item}
                         className={clsx(
                           "block px-4 py-2.5 text-sm transition",
                           linkActive(item.href) ? "bg-white/10 text-white" : "text-slate-300 hover:bg-white/5 hover:text-white",
                         )}
-                      >
-                        {item.label}
-                      </Link>
+                      />
                     ))}
                   </div>
                 </div>
@@ -192,16 +213,14 @@ export default function Navbar() {
                 <div key={entry.label} className="pt-2">
                   <p className="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">{entry.label}</p>
                   {entry.items.map((item) => (
-                    <Link
+                    <NavItem
                       key={item.href}
-                      href={item.href}
+                      item={item}
                       className={clsx(
                         "rounded-lg px-3 py-2.5 text-sm font-medium transition",
                         pathname?.startsWith(item.href) ? "bg-white/10 text-white" : "text-slate-300 hover:bg-white/5 hover:text-white",
                       )}
-                    >
-                      {item.label}
-                    </Link>
+                    />
                   ))}
                 </div>
               ) : (
