@@ -137,6 +137,11 @@ function SpatialSetup() {
       .finally(() => setVariablesLoading(false));
     const selected = datasets.find((item) => item.id === datasetId);
     if (selected?.country_iso3) setCountryIso3(selected.country_iso3);
+    // `adminLevel` is read for the initial suggestion but deliberately excluded
+    // from the deps: re-running this on an admin-level change would refetch the
+    // variable list and wipe the user's picks. The level dropdown's onChange
+    // re-suggests the geography variable on its own instead.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [datasetId, datasets]);
 
   function launch() {

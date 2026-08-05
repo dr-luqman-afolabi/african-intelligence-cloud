@@ -191,7 +191,10 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins.split(","),
-    allow_credentials=True,
+    # Auth is a Bearer token in the Authorization header, never a cookie, so
+    # credentialed cross-origin requests are never needed. Keeping this False
+    # means a browser will refuse to send cookies here even if one is ever set.
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
