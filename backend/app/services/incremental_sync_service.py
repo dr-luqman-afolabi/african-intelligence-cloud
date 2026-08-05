@@ -75,23 +75,35 @@ def run_incremental_sync(db: Session, source_id: str) -> dict:
     try:
         wm = get_watermark(db, source_id)
         since = wm.last_cursor if wm else None
+        # BaseConnector.sync() is fetch() + normalise() and already returns
+        # canonical records — only the bare fetch() path still needs
+        # normalising. Normalising twice discards every record.
         if hasattr(connector, "sync"):
-            raw = connector.sync(since=since)
+            records = connector.sync(since=since)
         else:
-            raw = connector.fetch(since=since)
+            records = connector.normalise(connector.fetch(since=since))
 
-        normalised = connector.normalise(raw)
-        count = len(normalised)
+        count = len(records)
+
+        # Persist. Without this the run fetched data, counted it, advanced the
+        # watermark and threw the records away — so every execution "succeeded"
+        # while macro_data stayed empty.
+        from app.services.ingestion_service import ingest_records
+        written = ingest_records(db, source_id, records)
 
         # Cursor = ISO timestamp of this sync run
         new_cursor = datetime.now(timezone.utc).isoformat()
         upsert_watermark(db, source_id, new_cursor, count)
 
-        logger.info("Incremental sync %s: %d records, cursor=%s", source_id, count, new_cursor)
+        logger.info(
+            "Incremental sync %s: %d fetched, %d written, cursor=%s",
+            source_id, count, written, new_cursor,
+        )
         return {
             "source_id": source_id,
             "status": "ok",
             "records_fetched": count,
+            "records_written": written,
             "cursor": new_cursor,
         }
     except Exception as exc:

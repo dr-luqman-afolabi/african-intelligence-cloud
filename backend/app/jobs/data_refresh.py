@@ -27,6 +27,7 @@ def main() -> int:
     failed = [item for item in results if item.get("status") == "error"]
     skipped = [item for item in results if item.get("status") == "no_connector"]
     records = sum(int(item.get("records_fetched") or 0) for item in succeeded)
+    written = sum(int(item.get("records_written") or 0) for item in succeeded)
 
     summary = {
         "started_at": started_at.isoformat(),
@@ -35,6 +36,7 @@ def main() -> int:
         "sources_failed": len(failed),
         "sources_skipped": len(skipped),
         "records_fetched": records,
+        "records_written": written,
         "failures": [
             {"source_id": item.get("source_id"), "message": item.get("message")}
             for item in failed
