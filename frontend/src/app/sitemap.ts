@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import type { Country } from "@/lib/api";
 import { serverFetch } from "@/lib/serverApi";
+import { SOLUTIONS } from "@/lib/solutions";
 
 const SITE_URL = "https://aic.hyrin.org";
 
@@ -20,6 +21,8 @@ const ROUTES: Route[] = [
   { path: "/dashboard", priority: 0.9, changeFrequency: "daily" },
   { path: "/microdata", priority: 0.9, changeFrequency: "weekly" },
   { path: "/countries", priority: 0.9, changeFrequency: "weekly" },
+  { path: "/solutions", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/partners", priority: 0.8, changeFrequency: "monthly" },
   { path: "/sdg", priority: 0.8, changeFrequency: "weekly" },
   { path: "/research", priority: 0.8, changeFrequency: "weekly" },
   { path: "/surveys", priority: 0.7, changeFrequency: "weekly" },
@@ -55,5 +58,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...base, ...countryRoutes];
+  const solutionRoutes = SOLUTIONS.map((s) => ({
+    url: `${SITE_URL}/solutions/${s.slug}`,
+    lastModified,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+  }));
+
+  return [...base, ...countryRoutes, ...solutionRoutes];
 }

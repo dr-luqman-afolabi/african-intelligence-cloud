@@ -32,6 +32,7 @@ const NAV: NavEntry[] = [
       { href: "/sdg", label: "AIC SDG", hint: "Sustainable Development Goals" },
     ],
   },
+  { href: "/solutions", label: "Solutions" },
   { href: "/countries", label: "Countries" },
   {
     label: "Data",
@@ -47,6 +48,7 @@ const NAV: NavEntry[] = [
     ],
   },
   { href: "/about", label: "About" },
+  { href: "/partners", label: "Partner" },
 ];
 
 function isGroup(entry: NavEntry): entry is NavGroup {

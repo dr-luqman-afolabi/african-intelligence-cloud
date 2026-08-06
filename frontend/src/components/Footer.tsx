@@ -25,6 +25,8 @@ const COLUMNS = [
     title: "Company",
     links: [
       { href: "/about", label: "About" },
+      { href: "/solutions", label: "Solutions" },
+      { href: "/partners", label: "Partner with AIC" },
       { href: "/contact", label: "Contact" },
       { href: "/login", label: "Sign in" },
       { href: "/register", label: "Create account" },
