@@ -193,6 +193,56 @@ def _fetch_wb_series(iso3: str, indicator_code: str) -> list[dict]:
         return []
 
 
+def _fetch_wb_indicator_batch(iso3s: list[str], indicator_code: str) -> list[dict]:
+    """Fetch one indicator for many countries in a single call.
+
+    Returns [{iso3, indicator_code, year, value}, ...]. Falls back to
+    per-country requests only if the batch call fails outright, so a bad batch
+    degrades to the old behaviour instead of losing every country at once.
+    """
+    if not iso3s:
+        return []
+    url = f"{settings.worldbank_base_url}/country/{';'.join(iso3s)}/indicator/{indicator_code}"
+    # 54 countries x 30 years needs generous paging; the API caps sensibly.
+    params = {"format": "json", "per_page": 20000, "mrv": 30}
+    try:
+        resp = _WB_SESSION.get(url, params=params, timeout=_WB_TIMEOUT)
+        if resp.status_code == 400:
+            resp = _WB_SESSION.get(
+                url,
+                params={"format": "json", "per_page": 20000},
+                timeout=_WB_TIMEOUT,
+            )
+        resp.raise_for_status()
+        data = resp.json()
+        if len(data) < 2 or not data[1]:
+            return []
+        out: list[dict] = []
+        for row in data[1]:
+            if row.get("value") is None:
+                continue
+            iso3 = (row.get("countryiso3code") or "").upper()
+            if not iso3:
+                continue
+            out.append({
+                "iso3": iso3,
+                "indicator_code": indicator_code,
+                "year": int(row["date"]),
+                "value": row["value"],
+            })
+        return out
+    except Exception as exc:
+        logger.warning(
+            "World Bank batch fetch failed for %s (%d countries): %s — falling back per country",
+            indicator_code, len(iso3s), exc,
+        )
+        out = []
+        for iso3 in iso3s:
+            for row in _fetch_wb_series(iso3, indicator_code):
+                out.append({"iso3": iso3, "indicator_code": indicator_code, **row})
+        return out
+
+
 def seed_countries(db: Session) -> None:
     """Insert default African countries if not already present."""
     for c in COUNTRIES:
@@ -322,14 +372,20 @@ class WorldBankConnector(BaseConnector):
             )
 
     def fetch(self, countries: list[str] | None = None, indicators: list[str] | None = None, **kwargs) -> list[dict]:
-        """Pull raw data from World Bank API. Returns list of {iso3, indicator_code, year, value}."""
+        """Pull raw data from World Bank API. Returns list of {iso3, indicator_code, year, value}.
+
+        Batched one request per indicator across all countries rather than one
+        per country/indicator pair: 54 x 27 sequential calls hammered the API
+        hard enough that it returned sporadic 400s and timeouts, and because a
+        failed call dropped that series outright, whole countries ended up with
+        no data. The v2 API accepts semicolon-separated country codes, so the
+        same coverage costs ~27 requests instead of ~1,458.
+        """
         target_countries = countries or [c["iso3"] for c in COUNTRIES]
         target_indicators = indicators or list(INDICATORS.keys())
         raw: list[dict] = []
-        for iso3 in target_countries:
-            for code in target_indicators:
-                for row in _fetch_wb_series(iso3, code):
-                    raw.append({"iso3": iso3, "indicator_code": code, **row})
+        for code in target_indicators:
+            raw.extend(_fetch_wb_indicator_batch(target_countries, code))
         return raw
 
     def normalise(self, raw: list[dict]) -> list[dict]:
