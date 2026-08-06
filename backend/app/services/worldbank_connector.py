@@ -5,12 +5,42 @@ Fetches macroeconomic indicators and upserts them into the database.
 import logging
 import time
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.connectors.base import BaseConnector, ConnectorError, ConnectorMetadata, HealthStatus
 
 logger = logging.getLogger(__name__)
+
+# A full refresh issues ~54 countries x 27 indicators sequential calls to an API
+# hosted far from africa-south1. Two things made that lossy: every plain
+# requests.get() paid a fresh TCP+TLS handshake, and a single transient timeout
+# dropped that country/indicator series permanently — which is how whole
+# countries ended up with no macro data at all. A pooled session with bounded
+# retries fixes both.
+_WB_TIMEOUT = 30
+
+
+def _build_wb_session() -> requests.Session:
+    session = requests.Session()
+    retry = Retry(
+        total=3,
+        connect=3,
+        read=3,
+        backoff_factor=1.5,  # 0s, 1.5s, 3s, 6s between attempts
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=frozenset(["GET"]),
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retry, pool_connections=4, pool_maxsize=8)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    return session
+
+
+_WB_SESSION = _build_wb_session()
 
 # Connector identity — must match registry.py entry
 SOURCE_METADATA = {
@@ -126,10 +156,8 @@ COUNTRIES = [
 def _fetch_wb_series(iso3: str, indicator_code: str) -> list[dict]:
     """Fetch a single indicator series from World Bank API."""
     url = f"{settings.worldbank_base_url}/country/{iso3}/indicator/{indicator_code}"
-    params = {"format": "json", "per_page": 100, "mrv": 30}
-    try:
-        resp = requests.get(url, params=params, timeout=15)
-        resp.raise_for_status()
+
+    def _parse(resp) -> list[dict]:
         data = resp.json()
         if len(data) < 2 or not data[1]:
             return []
@@ -138,6 +166,22 @@ def _fetch_wb_series(iso3: str, indicator_code: str) -> list[dict]:
             for row in data[1]
             if row.get("value") is not None
         ]
+
+    try:
+        resp = _WB_SESSION.get(
+            url,
+            params={"format": "json", "per_page": 100, "mrv": 30},
+            timeout=_WB_TIMEOUT,
+        )
+        # The API intermittently rejects the per_page+mrv combination with a 400
+        # for some series (e.g. KEN/SP.POP.GROW). mrv alone is enough to bound
+        # the window, so retry without per_page rather than losing the series.
+        if resp.status_code == 400:
+            resp = _WB_SESSION.get(
+                url, params={"format": "json", "mrv": 30}, timeout=_WB_TIMEOUT
+            )
+        resp.raise_for_status()
+        return _parse(resp)
     except requests.exceptions.Timeout:
         logger.error("World Bank API timeout for %s/%s", iso3, indicator_code)
         return []
