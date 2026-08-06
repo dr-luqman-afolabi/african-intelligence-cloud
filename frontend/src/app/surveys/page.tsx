@@ -1,116 +1,58 @@
-"use client";
-import { useEffect, useState } from "react";
-import clsx from "clsx";
-import { fetchSurveys, SurveyEntry } from "@/lib/api";
+import type { SurveyEntry } from "@/lib/api";
+import { serverFetch } from "@/lib/serverApi";
 import PageHeader from "@/components/ui/PageHeader";
-import Spinner from "@/components/ui/Spinner";
+import SurveyCatalog from "./SurveyCatalog";
 
-function AccessBadge({ requiresApproval, redistributionAllowed }: { requiresApproval: boolean; redistributionAllowed: boolean }) {
-  if (!requiresApproval && redistributionAllowed) {
-    return <span className="px-1.5 py-0.5 rounded text-xs font-medium uppercase bg-green-100 text-green-800">Open</span>;
-  }
-  if (requiresApproval) {
-    return <span className="px-1.5 py-0.5 rounded text-xs font-medium uppercase bg-yellow-100 text-yellow-800">Registration required</span>;
-  }
-  return <span className="px-1.5 py-0.5 rounded text-xs font-medium uppercase bg-blue-100 text-blue-800">Restricted</span>;
-}
+// Server component: the catalogue is fetched here so every survey is present in
+// the initial HTML for crawlers. Only the topic filter is client-side.
+export default async function SurveysPage() {
+  const surveys = await serverFetch<SurveyEntry[]>("/surveys", { fallback: [] });
 
-function formatTopic(topic: string) {
-  return topic
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
+  // Surface the catalogue to search engines as a structured dataset list.
+  const jsonLd = surveys.length
+    ? {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: "African Survey Catalogue",
+        numberOfItems: surveys.length,
+        itemListElement: surveys.slice(0, 100).map((s, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          item: {
+            "@type": "Dataset",
+            name: s.title,
+            description: `${s.series} household survey${s.country_iso3 ? ` for ${s.country_iso3}` : ""}.`,
+            ...(s.access_url ? { url: s.access_url } : {}),
+            ...(s.country_iso3 ? { spatialCoverage: s.country_iso3 } : {}),
+          },
+        })),
+      }
+    : null;
 
-export default function SurveysPage() {
-  const [surveys, setSurveys] = useState<SurveyEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [topicFilter, setTopicFilter] = useState<string>("all");
-  
-  useEffect(() => {
-    fetchSurveys()
-      .then((data) => {
-        setSurveys(data);
-        setError(null);
-      })
-      .catch(() => setError("The survey catalogue is temporarily unavailable. Please try again shortly."))
-      .finally(() => setLoading(false));
-  }, []);
-  
-  const topics = ["all", ...Array.from(new Set(surveys.map((s) => s.primary_topic)))];
-  const filtered = topicFilter === "all" ? surveys : surveys.filter((s) => s.primary_topic === topicFilter);
-  
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 space-y-8">
-    <PageHeader
-      eyebrow="Survey catalog"
-      title="Microdata & Survey Catalog"
-      description="Household, health, and census microdata series available for research (DHS, LSMS, IPUMS, MICS, and more)."
-    />
-    
-      {error && (
-      <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">{error}</div>
-    )}
-    
-    <div className="flex items-center gap-2 flex-wrap">
-      {topics.map((t) => (
-      <button
-        key={t}
-        onClick={() => setTopicFilter(t)}
-        className={clsx(
-          "px-4 py-1.5 rounded-full text-sm font-medium transition capitalize",
-          topicFilter === t ? "bg-aic-dark text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-          )}
-        >
-        {formatTopic(t)}
-      </button>
-      ))}
-    </div>
-    
-      {loading ? (
-      <div className="flex justify-center py-20"><Spinner /></div>
-      ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {filtered.length === 0 && (
-        <div className="text-center py-12 text-slate-400 col-span-2">No surveys match the current filter.</div>
+      {jsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       )}
-        {filtered.map((s) => (
-        <div key={s.survey_id} className="card card-hover p-5 flex flex-col gap-2">
-        <div className="flex items-start justify-between gap-2">
-        <h2 className="font-semibold text-slate-800">{s.title}</h2>
-        <AccessBadge requiresApproval={s.requires_approval} redistributionAllowed={s.redistribution_allowed} />
+
+      <PageHeader
+        eyebrow="Survey catalog"
+        title="Microdata & Survey Catalog"
+        description="Household, health, and census microdata series available for research (DHS, LSMS, IPUMS, MICS, and more)."
+      />
+
+      {surveys.length === 0 ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-amber-800 text-sm">
+          The survey catalogue is temporarily unavailable. Please try again shortly.
         </div>
-        <div className="text-xs text-slate-400">
-          {s.series} · {formatTopic(s.primary_topic)}
-          {s.country_iso3 ? ` · ${s.country_iso3}` : ""}
-        </div>
-          {s.microdata_available && (
-          <div className="text-xs text-green-700 font-medium">Microdata available</div>
-        )}
-        <div className="flex flex-wrap gap-1.5">
-          {(s.tags || []).map((tag) => (
-          <span key={tag} className="px-1.5 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600">
-            {tag}
-          </span>
-          ))}
-        </div>
-        <div className="flex gap-4 mt-2 text-sm">
-          {s.access_url && (
-          <a href={s.access_url} target="_blank" rel="noreferrer" className="text-aic-green hover:underline">
-          Access data ↗
-          </a>
-        )}
-          {s.documentation_url && (
-          <a href={s.documentation_url} target="_blank" rel="noreferrer" className="text-slate-500 hover:underline">
-          Documentation ↗
-          </a>
-        )}
-        </div>
-        </div>
-        ))}
-      </div>
-    )}
+      ) : (
+        <>
+          <p className="text-sm text-slate-500">
+            {surveys.length} survey series catalogued across Africa.
+          </p>
+          <SurveyCatalog surveys={surveys} />
+        </>
+      )}
     </div>
-    );
+  );
 }
