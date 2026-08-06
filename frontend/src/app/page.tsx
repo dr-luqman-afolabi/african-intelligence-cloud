@@ -1,6 +1,9 @@
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
 
+// Hosted JupyterHub — a separate service, so an absolute URL.
+const ANALYTICS_STUDIO_URL = "https://studio.hyrin.org";
+
 // Deliberately specific. "54 countries supported" invites the question of what
 // support means, so each figure states what is actually there.
 const STATS = [
@@ -47,6 +50,14 @@ const FEATURES = [
     description: "Progress against all 17 Sustainable Development Goals, with indicator-level detail and country comparison across the continent.",
     href: "/sdg",
     icon: <path d="M4 21V9M12 21V3M20 21v-7" strokeLinecap="round" />,
+  },
+  {
+    name: "AIC Studio",
+    title: "Hosted Python & R notebooks",
+    description: "A full econometrics workbench in the browser — ARDL/NARDL, dynamic panel GMM, quantile regression, Bayesian VAR, spatial econometrics and DiD, with Stata and SPSS files read directly.",
+    href: ANALYTICS_STUDIO_URL,
+    external: true,
+    icon: <path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13.5 6l-3 12" strokeLinecap="round" strokeLinejoin="round" />,
   },
   {
     name: "AIC Data",
@@ -122,7 +133,7 @@ export default function Home() {
       <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="mx-auto max-w-2xl text-center">
           <p className="section-label">The platform</p>
-          <h2 className="mt-2 text-3xl font-bold text-aic-dark">One platform, six connected products</h2>
+          <h2 className="mt-2 text-3xl font-bold text-aic-dark">One platform, seven connected products</h2>
           <p className="mt-3 text-aic-muted">
             Each product works on its own and together — the same country, survey and indicator data
             flows between them, so an analysis started in one continues in the next.
@@ -130,31 +141,41 @@ export default function Home() {
         </div>
 
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f, i) => (
-            <Link
-              key={f.name}
-              href={f.href}
-              className="card card-hover group flex flex-col gap-4 p-6 animate-fade-in-up"
-              style={{ animationDelay: `${i * 0.05}s` }}
-            >
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-aic-green/10 text-aic-green transition group-hover:bg-aic-green group-hover:text-white">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  {f.icon}
-                </svg>
-              </div>
-              <div>
-                <h3 className="font-bold text-aic-dark">{f.name}</h3>
-                <p className="text-sm font-medium text-aic-green">{f.title}</p>
-                <p className="mt-1.5 text-sm text-slate-500">{f.description}</p>
-              </div>
-              <span className="mt-auto flex items-center gap-1 text-sm font-medium text-aic-green opacity-0 transition group-hover:opacity-100">
-                Explore
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-            </Link>
-          ))}
+          {FEATURES.map((f, i) => {
+            const cardClass = "card card-hover group flex flex-col gap-4 p-6 animate-fade-in-up";
+            const style = { animationDelay: `${i * 0.05}s` };
+            const body = (
+              <>
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-aic-green/10 text-aic-green transition group-hover:bg-aic-green group-hover:text-white">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    {f.icon}
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold text-aic-dark">{f.name}</h3>
+                  <p className="text-sm font-medium text-aic-green">{f.title}</p>
+                  <p className="mt-1.5 text-sm text-slate-500">{f.description}</p>
+                </div>
+                <span className="mt-auto flex items-center gap-1 text-sm font-medium text-aic-green opacity-0 transition group-hover:opacity-100">
+                  {f.external ? "Open" : "Explore"}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+              </>
+            );
+
+            // AIC Studio runs on its own host, so it needs a real anchor.
+            return f.external ? (
+              <a key={f.name} href={f.href} target="_blank" rel="noopener noreferrer" className={cardClass} style={style}>
+                {body}
+              </a>
+            ) : (
+              <Link key={f.name} href={f.href} className={cardClass} style={style}>
+                {body}
+              </Link>
+            );
+          })}
         </div>
       </section>
 

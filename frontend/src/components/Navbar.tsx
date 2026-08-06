@@ -24,12 +24,12 @@ const NAV: NavEntry[] = [
     items: [
       { href: "/dashboard", label: "AIC Macro", hint: "Macroeconomic intelligence" },
       { href: "/microdata", label: "AIC Micro", hint: "Poverty & welfare analytics" },
+      { href: ANALYTICS_STUDIO_URL, label: "AIC Studio ↗", hint: "Hosted Python & R notebooks", external: true },
       { href: "/microdata/explorer", label: "AIC Geo", hint: "Spatial development intelligence" },
       { href: "/microdata/intelligence", label: "AIC Intelligence", hint: "Ask questions in plain language" },
       { href: "/research", label: "AIC Research", hint: "AI-assisted research workflow" },
       { href: "/forecast", label: "AIC Forecast", hint: "Projections & scenarios" },
       { href: "/sdg", label: "AIC SDG", hint: "Sustainable Development Goals" },
-      { href: ANALYTICS_STUDIO_URL, label: "Analytics Studio ↗", hint: "Python & R notebooks", external: true },
     ],
   },
   { href: "/countries", label: "Countries" },
