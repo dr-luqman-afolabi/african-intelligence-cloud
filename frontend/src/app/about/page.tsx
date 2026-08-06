@@ -124,7 +124,7 @@ export default function AboutPage() {
 
         <div className="relative mx-auto max-w-3xl text-center">
           <div className="mb-6 flex justify-center animate-fade-in">
-            <Logo size="lg" />
+            <Logo variant="full" size="lg" />
           </div>
           <p className="section-label animate-fade-in">About us</p>
           <h1 className="mt-2 animate-fade-in-up text-4xl font-bold tracking-tight text-aic-dark sm:text-5xl">

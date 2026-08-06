@@ -45,7 +45,7 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-6 py-12">
         <div className="grid grid-cols-2 gap-8 sm:grid-cols-5">
           <div className="col-span-2 sm:col-span-1">
-            <Logo />
+            <Logo variant="full" size="sm" />
             <p className="mt-3 max-w-xs text-sm text-aic-muted">
               Macroeconomic data, microdata poverty analysis, and Africa-wide GIS mapping — policy
               intelligence for African countries with available source data.

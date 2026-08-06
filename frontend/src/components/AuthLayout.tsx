@@ -12,7 +12,7 @@ export default function AuthLayout({ title, subtitle, children }: { title: strin
       <div className="relative hidden flex-col justify-between overflow-hidden bg-aic-gradient p-10 text-white lg:flex">
         <div className="pointer-events-none absolute -top-16 -right-16 h-72 w-72 rounded-full bg-white/10 blur-3xl animate-float" />
         <div className="relative">
-          <Logo size="md" />
+          <Logo variant="mark" size="sm" plate />
         </div>
         <div className="relative space-y-6">
           <h2 className="text-3xl font-bold leading-tight">

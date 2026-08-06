@@ -31,7 +31,7 @@ export default function ContactPage() {
         <div className="pointer-events-none absolute -top-24 right-0 h-72 w-72 rounded-full bg-aic-green/10 blur-3xl" />
         <div className="relative mx-auto max-w-3xl text-center">
           <div className="mb-6 flex justify-center">
-            <Logo size="lg" />
+            <Logo variant="full" size="lg" />
           </div>
           <p className="section-label">Contact</p>
           <h1 className="mt-2 text-4xl font-bold tracking-tight text-aic-dark sm:text-5xl">

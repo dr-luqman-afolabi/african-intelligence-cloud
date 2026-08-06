@@ -57,7 +57,7 @@ export default function Home() {
 
         <div className="relative mx-auto max-w-4xl text-center">
           <div className="mb-6 flex justify-center animate-fade-in">
-            <Logo size="lg" />
+            <Logo variant="full" size="lg" />
           </div>
 
           <h1 className="animate-fade-in-up text-4xl font-bold tracking-tight text-aic-dark sm:text-6xl">

@@ -35,11 +35,20 @@ export const metadata: Metadata = {
     siteName: "African Intelligence Cloud",
     locale: "en_US",
     type: "website",
+    images: [{ url: "/aic-logo.png", width: 720, height: 552, alt: "African Intelligence Cloud" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "African Intelligence Cloud",
     description: "Macroeconomic data, analytics, and policy intelligence for Africa.",
+    images: ["/aic-logo.png"],
+  },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: "/apple-touch-icon.png",
   },
   alternates: {
     canonical: "/",
@@ -73,6 +82,8 @@ const JSON_LD = {
       areaServed: { "@type": "Place", name: "Africa" },
       knowsAbout: ["Poverty analysis", "LSMS microdata", "Agricultural productivity", "Spatial poverty mapping", "SDG indicators", "African economic development"],
       email: "aluqman@hyrin.org",
+      logo: `${SITE_URL}/aic-logo.png`,
+      image: `${SITE_URL}/aic-logo.png`,
       sameAs: ["https://hyrin.org"],
       founder: {
         "@type": "Person",

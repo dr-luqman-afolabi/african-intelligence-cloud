@@ -128,7 +128,7 @@ export default function Navbar() {
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6">
         <Link href="/" className="text-white shrink-0">
-          <Logo />
+          <Logo variant="mark" size="sm" plate />
         </Link>
 
         <div className="hidden items-center gap-1 lg:flex">
