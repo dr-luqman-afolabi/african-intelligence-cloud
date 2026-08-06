@@ -38,6 +38,7 @@ const NAV: NavEntry[] = [
       { href: "/connectors", label: "Connectors" },
     ],
   },
+  { href: "/countries", label: "Countries" },
   { href: "/research", label: "AI Research" },
   { href: "/sdg", label: "SDG" },
   { href: "/search", label: "Search" },

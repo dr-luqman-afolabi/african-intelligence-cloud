@@ -21,6 +21,8 @@ export interface Country {
   iso2: string;
   name: string;
   region: string;
+  /** World Bank income classification; null for countries the Bank doesn't classify. */
+  income_group?: string | null;
 }
 
 export interface Indicator {

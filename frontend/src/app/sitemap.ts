@@ -1,4 +1,6 @@
 import type { MetadataRoute } from "next";
+import type { Country } from "@/lib/api";
+import { serverFetch } from "@/lib/serverApi";
 
 const SITE_URL = "https://aic.hyrin.org";
 
@@ -17,6 +19,7 @@ const ROUTES: Route[] = [
   { path: "/about", priority: 0.9, changeFrequency: "monthly" },
   { path: "/dashboard", priority: 0.9, changeFrequency: "daily" },
   { path: "/microdata", priority: 0.9, changeFrequency: "weekly" },
+  { path: "/countries", priority: 0.9, changeFrequency: "weekly" },
   { path: "/sdg", priority: 0.8, changeFrequency: "weekly" },
   { path: "/research", priority: 0.8, changeFrequency: "weekly" },
   { path: "/surveys", priority: 0.7, changeFrequency: "weekly" },
@@ -32,12 +35,25 @@ const ROUTES: Route[] = [
   { path: "/terms", priority: 0.3, changeFrequency: "yearly" },
 ];
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified = new Date();
-  return ROUTES.map(({ path, priority, changeFrequency }) => ({
+
+  const base = ROUTES.map(({ path, priority, changeFrequency }) => ({
     url: `${SITE_URL}${path}`,
     lastModified,
     changeFrequency,
     priority,
   }));
+
+  // One entry per country page. Generated from the live list rather than a
+  // hardcoded array so the sitemap can't drift from what actually renders.
+  const countries = await serverFetch<Country[]>("/countries", { fallback: [] });
+  const countryRoutes = countries.map((c) => ({
+    url: `${SITE_URL}/countries/${c.iso3.toLowerCase()}`,
+    lastModified,
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
+  return [...base, ...countryRoutes];
 }

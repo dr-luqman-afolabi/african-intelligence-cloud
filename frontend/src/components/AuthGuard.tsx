@@ -29,7 +29,7 @@ const PUBLIC_PATHS = [
 // so visitors — and reviewers — can see the live product. Uploads and private
 // datasets remain protected server-side: the API returns 401 without a token,
 // so the pages render their interface but load no private data when logged out.
-const PUBLIC_PREFIXES = ["/research", "/microdata"];
+const PUBLIC_PREFIXES = ["/research", "/microdata", "/countries"];
 
 function isPublicPath(pathname: string): boolean {
   if (PUBLIC_PATHS.includes(pathname)) return true;
