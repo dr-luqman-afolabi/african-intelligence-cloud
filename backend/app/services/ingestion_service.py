@@ -27,6 +27,34 @@ def ingest_records(db: Session, source_id: str, records: list[dict]) -> int:
     indicator_cache: dict[str, Indicator | None] = {}
     written = 0
 
+    # Pre-load the existing rows this payload could collide with, in one query.
+    # This used to be a SELECT per record: with ~40k records and the database in
+    # us-central1 while the refresh job runs in africa-south1, those round trips
+    # alone took hours, so the job hit its task timeout before ever reaching the
+    # commit below — and every fetched record was discarded.
+    codes = {
+        (r.get("indicator_code") or "")
+        for r in records
+        if isinstance(r, dict) and r.get("indicator_code")
+    }
+    existing_ids: dict[tuple[str, str, int], int] = {}
+    if codes:
+        for row in (
+            db.query(
+                MacroData.id,
+                MacroData.country_iso3,
+                MacroData.indicator_code,
+                MacroData.year,
+            )
+            .filter(MacroData.indicator_code.in_(codes))
+            .all()
+        ):
+            existing_ids[(row.country_iso3, row.indicator_code, row.year)] = row.id
+
+    inserts: list[dict] = []
+    updates: list[dict] = []
+    seen_new: set[tuple[str, str, int]] = set()
+
     for rec in records:
         # Catalogue-style sources (DOI indexes, survey/microdata listings) emit
         # records that aren't country-indicator series at all — missing or null
@@ -57,28 +85,31 @@ def ingest_records(db: Session, source_id: str, records: list[dict]) -> int:
             logger.debug("Skipping unknown indicator: %s", code)
             continue
 
-        existing = (
-            db.query(MacroData)
-            .filter(
-                MacroData.country_iso3 == iso3,
-                MacroData.indicator_code == code,
-                MacroData.year == year,
-            )
-            .first()
-        )
-        if existing:
-            existing.value = value
-            existing.data_source = rec.get("data_source", source_id)
-        else:
-            db.add(MacroData(
-                country_iso3=iso3,
-                indicator_code=code,
-                year=year,
-                value=value,
-                data_source=rec.get("data_source", source_id),
-            ))
+        key = (iso3, code, year)
+        row_id = existing_ids.get(key)
+        if row_id is not None:
+            updates.append({
+                "id": row_id,
+                "value": value,
+                "data_source": rec.get("data_source", source_id),
+            })
+        elif key not in seen_new:
+            # Guard against duplicates inside one payload, which would violate
+            # the uniqueness the per-row SELECT used to enforce implicitly.
+            seen_new.add(key)
+            inserts.append({
+                "country_iso3": iso3,
+                "indicator_code": code,
+                "year": year,
+                "value": value,
+                "data_source": rec.get("data_source", source_id),
+            })
         written += 1
 
+    if inserts:
+        db.bulk_insert_mappings(MacroData, inserts)
+    if updates:
+        db.bulk_update_mappings(MacroData, updates)
     db.commit()
     return written
 
