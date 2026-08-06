@@ -6,7 +6,7 @@ import clsx from "clsx";
 import Logo from "@/components/ui/Logo";
 import { fetchCurrentUser } from "@/lib/api";
 
-type NavLink = { href: string; label: string; external?: boolean };
+type NavLink = { href: string; label: string; hint?: string; external?: boolean };
 type NavGroup = { label: string; items: NavLink[] };
 type NavEntry = NavLink | NavGroup;
 
@@ -14,34 +14,38 @@ type NavEntry = NavLink | NavGroup;
 // absolute URL rather than an app route.
 const ANALYTICS_STUDIO_URL = "https://studio.hyrin.org";
 
+// Grouped as products rather than as a list of tools. A first-time visitor —
+// or a funder — should meet the platform before meeting ten analytical modules,
+// so the modules sit under Platform with their AIC product names and a line
+// saying what each is for.
 const NAV: NavEntry[] = [
-  { href: "/dashboard", label: "Dashboard" },
   {
-    label: "Analyze",
+    label: "Platform",
     items: [
-      { href: "/microdata", label: "Microdata Studio" },
-      { href: "/microdata/intelligence", label: "AIC Intelligence" },
-      { href: "/analysis-lab", label: "Automated Analysis Lab" },
-      { href: "/microdata/indicators", label: "Ag Indicators" },
-      { href: "/consumption", label: "Consumption Observatory" },
-      { href: "/forecast", label: "Forecasting" },
-      { href: "/microdata/explorer", label: "Spatial Explorer" },
-      { href: ANALYTICS_STUDIO_URL, label: "Analytics Studio ↗", external: true },
-    ],
-  },
-  {
-    label: "Data",
-    items: [
-      { href: "/datasets", label: "Datasets" },
-      { href: "/surveys", label: "Survey Catalog" },
-      { href: "/harveststat", label: "Crop Statistics" },
-      { href: "/connectors", label: "Connectors" },
+      { href: "/dashboard", label: "AIC Macro", hint: "Macroeconomic intelligence" },
+      { href: "/microdata", label: "AIC Micro", hint: "Poverty & welfare analytics" },
+      { href: "/microdata/explorer", label: "AIC Geo", hint: "Spatial development intelligence" },
+      { href: "/microdata/intelligence", label: "AIC Intelligence", hint: "Ask questions in plain language" },
+      { href: "/research", label: "AIC Research", hint: "AI-assisted research workflow" },
+      { href: "/forecast", label: "AIC Forecast", hint: "Projections & scenarios" },
+      { href: "/sdg", label: "AIC SDG", hint: "Sustainable Development Goals" },
+      { href: ANALYTICS_STUDIO_URL, label: "Analytics Studio ↗", hint: "Python & R notebooks", external: true },
     ],
   },
   { href: "/countries", label: "Countries" },
-  { href: "/research", label: "AI Research" },
-  { href: "/sdg", label: "SDG" },
-  { href: "/search", label: "Search" },
+  {
+    label: "Data",
+    items: [
+      { href: "/surveys", label: "Survey Catalogue", hint: "LSMS, DHS, MICS & more" },
+      { href: "/connectors", label: "Data Sources", hint: "46 catalogued connectors" },
+      { href: "/microdata/indicators", label: "Agricultural Indicators" },
+      { href: "/harveststat", label: "Crop Statistics" },
+      { href: "/consumption", label: "Consumption Observatory" },
+      { href: "/analysis-lab", label: "Automated Analysis Lab" },
+      { href: "/datasets", label: "My Datasets", hint: "Your uploads" },
+      { href: "/search", label: "Search" },
+    ],
+  },
   { href: "/about", label: "About" },
 ];
 
@@ -52,16 +56,25 @@ function isGroup(entry: NavEntry): entry is NavGroup {
 /** Renders a nav item as a client-side Link, or a new-tab anchor when the
  *  destination is a separate service (e.g. the hosted JupyterHub). */
 function NavItem({ item, className }: { item: NavLink; className: string }) {
+  const body = item.hint ? (
+    <>
+      <span className="block">{item.label}</span>
+      <span className="block text-xs text-slate-400">{item.hint}</span>
+    </>
+  ) : (
+    item.label
+  );
+
   if (item.external) {
     return (
       <a href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
-        {item.label}
+        {body}
       </a>
     );
   }
   return (
     <Link href={item.href} className={className}>
-      {item.label}
+      {body}
     </Link>
   );
 }
@@ -141,7 +154,7 @@ export default function Navbar() {
                   <Chevron />
                 </button>
                 <div className="absolute left-0 top-full hidden pt-2 group-hover:block">
-                  <div className="min-w-[210px] overflow-hidden rounded-xl border border-white/10 bg-aic-dark py-1 shadow-xl">
+                  <div className="min-w-[268px] overflow-hidden rounded-xl border border-white/10 bg-aic-dark py-1 shadow-xl">
                     {entry.items.map((item) => (
                       <NavItem
                         key={item.href}

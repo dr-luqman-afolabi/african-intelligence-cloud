@@ -1,47 +1,57 @@
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
 
+// Deliberately specific. "54 countries supported" invites the question of what
+// support means, so each figure states what is actually there.
 const STATS = [
-  { value: "54", label: "African countries indexed" },
-  { value: "30+", label: "Macro indicators catalogued" },
-  { value: "FGT0–2", label: "Poverty indices computed" },
-  { value: "Moran's I", label: "Spatial clustering analysis" },
+  { value: "54", label: "African countries with macro data" },
+  { value: "27", label: "Indicators tracked per country" },
+  { value: "46", label: "Catalogued data sources" },
+  { value: "17", label: "SDGs monitored" },
 ];
 
+// Presented as named products rather than a list of features, so the platform
+// can be described the same way in a proposal, a demo and the navigation.
 const FEATURES = [
   {
-    title: "Macro Dashboard",
-    description: "Historical GDP, inflation, poverty, trade, and debt indicators sourced from the World Bank, visualized over 30 years.",
+    name: "AIC Macro",
+    title: "Macroeconomic intelligence",
+    description: "GDP, inflation, trade, debt and social indicators for every African country, harmonized for cross-country comparison and charted over three decades.",
     href: "/dashboard",
     icon: <path d="M3 3v18h18M7 15l4-4 3 3 5-6" strokeLinecap="round" strokeLinejoin="round" />,
   },
   {
-    title: "Microdata & Poverty Studio",
-    description: "Upload household survey microdata and compute FGT poverty indices, Gini coefficients, and welfare distributions — for any African country.",
+    name: "AIC Micro",
+    title: "Household & poverty analytics",
+    description: "Analyse household survey microdata — FGT poverty indices, Gini coefficients, welfare distributions, agriculture and diversification — without leaving the browser.",
     href: "/microdata",
     icon: <path d="M12 3v18M3 12h18M5 5l14 14M19 5L5 19" strokeLinecap="round" />,
   },
   {
-    title: "Africa-wide GIS Mapping",
-    description: "Upload GADM, HDX, or Natural Earth boundaries and render choropleth poverty maps with Moran's I and LISA cluster analysis.",
-    href: "/microdata/spatial",
+    name: "AIC Geo",
+    title: "Spatial development intelligence",
+    description: "District and province-level choropleth mapping with Moran's I and LISA cluster analysis, using automatically sourced administrative boundaries.",
+    href: "/microdata/explorer",
     icon: <path d="M12 21s7-6.5 7-12a7 7 0 10-14 0c0 5.5 7 12 7 12z M12 12a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" strokeLinecap="round" strokeLinejoin="round" />,
   },
   {
-    title: "AI Research Assistant",
-    description: "Search papers, generate literature reviews, recommend theories/methods, and get AI-powered variable recommendations.",
+    name: "AIC Research",
+    title: "AI-assisted research",
+    description: "From research question to literature, theory, variables, method and interpretation — with sources cited throughout.",
     href: "/research",
     icon: <path d="M9.5 3a6.5 6.5 0 100 13 6.5 6.5 0 000-13zM21 21l-4.35-4.35" strokeLinecap="round" />,
   },
   {
-    title: "SDG Tracker",
-    description: "Track progress against all 17 Sustainable Development Goals with indicator-level data for every tracked country.",
+    name: "AIC SDG",
+    title: "Sustainable development monitoring",
+    description: "Progress against all 17 Sustainable Development Goals, with indicator-level detail and country comparison across the continent.",
     href: "/sdg",
     icon: <path d="M4 21V9M12 21V3M20 21v-7" strokeLinecap="round" />,
   },
   {
-    title: "46-source Data Registry",
-    description: "Explore live, planned, and restricted sources across World Bank, DHS, HDX, IPUMS, and other African-focused providers, with transparent status monitoring.",
+    name: "AIC Data",
+    title: "Sources & survey catalogue",
+    description: "46 catalogued data sources and the African household survey series behind them — World Bank, DHS, LSMS, MICS, IPUMS, HDX and national statistical offices.",
     href: "/connectors",
     icon: <path d="M12 2a10 10 0 100 20 10 10 0 000-20zM2 12h20M12 2a15 15 0 010 20 15 15 0 010-20z" strokeLinecap="round" />,
   },
@@ -61,14 +71,14 @@ export default function Home() {
           </div>
 
           <h1 className="animate-fade-in-up text-4xl font-bold tracking-tight text-aic-dark sm:text-6xl">
-            Policy intelligence, <span className="text-aic-green">built for Africa</span>
+            Africa&apos;s AI-powered <span className="text-aic-green">data &amp; policy intelligence platform</span>
           </h1>
           <p
             className="mx-auto mt-5 max-w-2xl animate-fade-in-up text-lg text-aic-muted sm:text-xl"
             style={{ animationDelay: "0.1s" }}
           >
-            Macroeconomic data, household microdata poverty analysis, and Africa-wide GIS mapping —
-            in one platform, built for African policy and research workflows.
+            Discover, integrate, analyse and interpret African macroeconomic, household, geospatial
+            and development data — within one intelligent cloud platform.
           </p>
 
           <div
@@ -76,15 +86,23 @@ export default function Home() {
             style={{ animationDelay: "0.2s" }}
           >
             <Link href="/dashboard" className="btn-primary px-6 py-3 text-base">
-              Open Dashboard
+              Explore the platform
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <path d="M5 12h14M13 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </Link>
-            <Link href="/microdata" className="btn-secondary px-6 py-3 text-base">
-              Explore Microdata Studio
+            <Link href="/countries" className="btn-secondary px-6 py-3 text-base">
+              Browse 54 countries
             </Link>
           </div>
+
+          <p
+            className="mx-auto mt-7 max-w-2xl animate-fade-in-up text-sm text-slate-500"
+            style={{ animationDelay: "0.25s" }}
+          >
+            Built for governments, researchers, development partners, universities and businesses
+            across Africa.
+          </p>
         </div>
 
         <div
@@ -103,18 +121,18 @@ export default function Home() {
       {/* Feature grid */}
       <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="section-label">Everything in one place</p>
-          <h2 className="mt-2 text-3xl font-bold text-aic-dark">A comprehensive intelligence toolkit</h2>
+          <p className="section-label">The platform</p>
+          <h2 className="mt-2 text-3xl font-bold text-aic-dark">One platform, six connected products</h2>
           <p className="mt-3 text-aic-muted">
-            From macro trends to household-level poverty mapping, AIC brings connected African
-            development data into a single, interactive workspace.
+            Each product works on its own and together — the same country, survey and indicator data
+            flows between them, so an analysis started in one continues in the next.
           </p>
         </div>
 
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f, i) => (
             <Link
-              key={f.title}
+              key={f.name}
               href={f.href}
               className="card card-hover group flex flex-col gap-4 p-6 animate-fade-in-up"
               style={{ animationDelay: `${i * 0.05}s` }}
@@ -125,7 +143,8 @@ export default function Home() {
                 </svg>
               </div>
               <div>
-                <h3 className="font-semibold text-aic-dark">{f.title}</h3>
+                <h3 className="font-bold text-aic-dark">{f.name}</h3>
+                <p className="text-sm font-medium text-aic-green">{f.title}</p>
                 <p className="mt-1.5 text-sm text-slate-500">{f.description}</p>
               </div>
               <span className="mt-auto flex items-center gap-1 text-sm font-medium text-aic-green opacity-0 transition group-hover:opacity-100">
