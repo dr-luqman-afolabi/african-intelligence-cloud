@@ -8,30 +8,56 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      // Sampled from the AIC logo rather than chosen by eye. The mark is built
+      // from navy (~#002050, its dominant colour) and green (~#0A8A48); it
+      // contains no gold or red, so those are kept only for the flag accent
+      // strip and are no longer used to theme the interface.
       colors: {
         aic: {
-          green: "#006B3C",
-          "green-light": "#0D9457",
-          "green-dark": "#004D2A",
+          // Navy — the primary brand colour. `dark` was #0B1220, effectively
+          // black, which read as a generic dark UI and clashed with the logo's
+          // navy. It is now the brand navy itself.
+          navy: "#0A2A5E",
+          "navy-deep": "#061B3D",
+          "navy-light": "#14417F",
+          dark: "#0A2A5E",
+
+          green: "#0A7C46",
+          "green-light": "#12A15C",
+          "green-dark": "#055C33",
+
+          // The teal-blue of the logo's orbit arc — used sparingly for
+          // secondary accents so the palette isn't only navy and green.
+          blue: "#1C6FA8",
+          "blue-light": "#2E8CC9",
+
+          // Retained for the pan-African accent strip only.
           gold: "#FFC20E",
           red: "#CE1126",
-          dark: "#0B1220",
-          slate: "#111827",
-          muted: "#64748B",
+
+          slate: "#132A4A",
+          muted: "#5A6B85",
         },
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
       },
       backgroundImage: {
-        "aic-hero": "radial-gradient(circle at 20% 20%, rgba(0,107,60,0.16), transparent 40%), radial-gradient(circle at 85% 0%, rgba(255,194,14,0.14), transparent 35%), radial-gradient(circle at 90% 80%, rgba(206,17,38,0.10), transparent 40%)",
-        "aic-gradient": "linear-gradient(135deg, #006B3C 0%, #0D9457 50%, #0B1220 100%)",
+        // Navy, green and the arc's blue — the logo's own three colours —
+        // replacing the green/gold/red wash, which shared nothing with the mark.
+        "aic-hero":
+          "radial-gradient(circle at 18% 15%, rgba(10,42,94,0.14), transparent 42%), radial-gradient(circle at 82% 5%, rgba(18,161,92,0.13), transparent 38%), radial-gradient(circle at 88% 82%, rgba(28,111,168,0.11), transparent 42%)",
+        "aic-gradient": "linear-gradient(135deg, #061B3D 0%, #0A2A5E 45%, #0A7C46 100%)",
+        "aic-gradient-soft": "linear-gradient(135deg, #0A2A5E 0%, #14417F 60%, #1C6FA8 100%)",
         "aic-card-glow": "linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0))",
       },
       boxShadow: {
-        card: "0 1px 2px rgba(15,23,42,0.04), 0 8px 24px -8px rgba(15,23,42,0.10)",
-        "card-hover": "0 4px 12px rgba(15,23,42,0.06), 0 16px 40px -12px rgba(15,23,42,0.18)",
-        glow: "0 0 0 1px rgba(0,107,60,0.08), 0 8px 30px -8px rgba(0,107,60,0.35)",
+        // Shadows tinted navy rather than neutral grey, so depth reads as part
+        // of the palette instead of a grey haze over it.
+        card: "0 1px 2px rgba(10,42,94,0.05), 0 8px 24px -8px rgba(10,42,94,0.12)",
+        "card-hover": "0 4px 12px rgba(10,42,94,0.08), 0 16px 40px -12px rgba(10,42,94,0.20)",
+        glow: "0 0 0 1px rgba(10,124,70,0.10), 0 8px 30px -8px rgba(10,124,70,0.35)",
+        "glow-navy": "0 0 0 1px rgba(10,42,94,0.10), 0 8px 30px -8px rgba(10,42,94,0.40)",
       },
       keyframes: {
         "fade-in": { "0%": { opacity: "0", transform: "translateY(8px)" }, "100%": { opacity: "1", transform: "translateY(0)" } },
