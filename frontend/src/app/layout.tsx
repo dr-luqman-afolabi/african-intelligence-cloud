@@ -81,7 +81,15 @@ const JSON_LD = {
         "Data, analytics and policy-intelligence platform for all 54 African countries — LSMS microdata, poverty & agriculture analytics, spatial poverty maps, and AI policy briefs.",
       areaServed: { "@type": "Place", name: "Africa" },
       knowsAbout: ["Poverty analysis", "LSMS microdata", "Agricultural productivity", "Spatial poverty mapping", "SDG indicators", "African economic development"],
-      email: "aluqman@hyrin.org",
+      // Organisation-level address; the founder keeps his own below.
+      email: "info.aic@hyrin.org",
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        email: "info.aic@hyrin.org",
+        areaServed: "Africa",
+        availableLanguage: ["English"],
+      },
       logo: `${SITE_URL}/aic-logo.png`,
       image: `${SITE_URL}/aic-logo.png`,
       sameAs: ["https://hyrin.org"],

@@ -99,8 +99,8 @@ export default function TermsPage() {
         <Section title="Contact">
           <p>
             Questions about these terms? Email{" "}
-            <a href="mailto:aluqman@hyrin.org" className="text-aic-green hover:underline">
-              aluqman@hyrin.org
+            <a href="mailto:info.aic@hyrin.org" className="text-aic-green hover:underline">
+              info.aic@hyrin.org
             </a>
             .
           </p>

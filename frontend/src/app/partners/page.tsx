@@ -141,6 +141,12 @@ export default function PartnersPage() {
             >
               Email the director
             </a>
+            <a
+              href="mailto:info.aic@hyrin.org?subject=AIC%20Partnership%20enquiry"
+              className="rounded-xl border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            >
+              info.aic@hyrin.org
+            </a>
             <Link
               href="/contact"
               className="rounded-xl border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"

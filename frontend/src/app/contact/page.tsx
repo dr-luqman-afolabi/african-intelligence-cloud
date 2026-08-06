@@ -11,16 +11,22 @@ export const metadata: Metadata = {
 
 const CHANNELS = [
   {
-    label: "General & partnerships",
-    value: "aluqman@hyrin.org",
-    href: "mailto:aluqman@hyrin.org",
-    note: "Research collaboration, institutional access, data licensing, and media enquiries.",
+    label: "General enquiries",
+    value: "info.aic@hyrin.org",
+    href: "mailto:info.aic@hyrin.org",
+    note: "Questions about the platform, data coverage, access, and media enquiries.",
   },
   {
     label: "Technical support",
+    value: "info.aic@hyrin.org",
+    href: "mailto:info.aic@hyrin.org?subject=AIC%20Support",
+    note: "Account issues, dataset uploads, and questions about running an analysis.",
+  },
+  {
+    label: "Partnerships & institutional access",
     value: "aluqman@hyrin.org",
-    href: "mailto:aluqman@hyrin.org?subject=AIC%20Support",
-    note: "Account issues, dataset uploads, and questions about analysis or the platform.",
+    href: "mailto:aluqman@hyrin.org?subject=AIC%20Partnership%20enquiry",
+    note: "Data partnerships, government deployments, research collaboration and funding.",
   },
 ];
 
@@ -45,7 +51,7 @@ export default function ContactPage() {
       </section>
 
       <div className="mx-auto max-w-4xl space-y-10 px-4 py-16">
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {CHANNELS.map((c) => (
             <div key={c.label} className="card p-6">
               <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{c.label}</p>

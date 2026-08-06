@@ -65,8 +65,8 @@ export default function Footer() {
               .
             </p>
             <p className="mt-4 text-sm text-aic-muted">
-              <a href="mailto:aluqman@hyrin.org" className="transition hover:text-aic-green">
-                aluqman@hyrin.org
+              <a href="mailto:info.aic@hyrin.org" className="transition hover:text-aic-green">
+                info.aic@hyrin.org
               </a>
             </p>
           </div>

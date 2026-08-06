@@ -100,8 +100,8 @@ export default function PrivacyPage() {
         <Section title="Contact">
           <p>
             Questions about this policy or your data? Email{" "}
-            <a href="mailto:aluqman@hyrin.org" className="text-aic-green hover:underline">
-              aluqman@hyrin.org
+            <a href="mailto:info.aic@hyrin.org" className="text-aic-green hover:underline">
+              info.aic@hyrin.org
             </a>
             .
           </p>
