@@ -14,6 +14,7 @@ const COLUMNS = [
   {
     title: "Data",
     links: [
+      { href: "/data", label: "Data Catalogue" },
       { href: "/datasets", label: "Datasets" },
       { href: "/surveys", label: "Surveys" },
       { href: "/connectors", label: "Connectors" },

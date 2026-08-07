@@ -37,6 +37,7 @@ const NAV: NavEntry[] = [
   {
     label: "Data",
     items: [
+      { href: "/data", label: "Data Catalogue", hint: "All sources in one place" },
       { href: "/surveys", label: "Survey Catalogue", hint: "LSMS, DHS, MICS & more" },
       { href: "/connectors", label: "Data Sources", hint: "46 catalogued connectors" },
       { href: "/microdata/indicators", label: "Agricultural Indicators" },

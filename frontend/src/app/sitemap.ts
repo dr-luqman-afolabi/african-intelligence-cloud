@@ -24,6 +24,7 @@ const ROUTES: Route[] = [
   { path: "/dashboard", priority: 0.9, changeFrequency: "daily" },
   { path: "/microdata", priority: 0.9, changeFrequency: "weekly" },
   { path: "/countries", priority: 0.9, changeFrequency: "weekly" },
+  { path: "/data", priority: 0.9, changeFrequency: "weekly" },
   { path: "/solutions", priority: 0.9, changeFrequency: "monthly" },
   { path: "/partners", priority: 0.8, changeFrequency: "monthly" },
   { path: "/governance", priority: 0.6, changeFrequency: "yearly" },
