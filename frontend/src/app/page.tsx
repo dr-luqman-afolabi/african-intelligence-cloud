@@ -19,7 +19,7 @@ const FEATURES = [
   {
     name: "AIC Macro",
     title: "Macroeconomic intelligence",
-    description: "GDP, inflation, trade, debt and social indicators for every African country, harmonized for cross-country comparison and charted over three decades.",
+    description: "GDP, inflation, trade, debt and social indicators for every African country — harmonized from international and national statistical sources, with the provenance of each series shown.",
     href: "/dashboard",
     icon: <path d="M3 3v18h18M7 15l4-4 3 3 5-6" strokeLinecap="round" strokeLinejoin="round" />,
   },

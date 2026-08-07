@@ -33,8 +33,13 @@ const COLUMNS = [
     ],
   },
   {
-    title: "Legal",
+    title: "Trust",
     links: [
+      { href: "/governance", label: "Trust & Governance" },
+      { href: "/governance/data-governance", label: "Data Governance" },
+      { href: "/governance/security", label: "Security" },
+      { href: "/governance/responsible-ai", label: "Responsible AI" },
+      { href: "/governance/methodology", label: "Methodology" },
       { href: "/privacy", label: "Privacy Policy" },
       { href: "/terms", label: "Terms of Service" },
     ],
