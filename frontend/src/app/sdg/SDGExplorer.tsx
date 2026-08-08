@@ -13,7 +13,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { fetchSDGData, SDGGoal, CountryEntry } from "@/lib/api";
+import { fetchSDGData, SDGGoal, CountryEntry, type InsightSeriesInput } from "@/lib/api";
+import AIInsightPanel from "@/components/insights/AIInsightPanel";
 
 const SDG_COLORS = [
   "#e5243b", "#dda63a", "#4c9f38", "#c5192d", "#ff3a21",
@@ -220,6 +221,16 @@ export default function SDGExplorer({
 
   const currentGoal = goals.find((g) => g.goal_number === selectedGoal);
 
+  const insightSeries: InsightSeriesInput[] = useMemo(() => {
+    return rawSeries
+      .filter((s) => s.data.length > 0)
+      .map((s) => ({
+        label: s.indicator_name,
+        units: s.unit,
+        points: s.data.map((d) => ({ year: d.year, value: d.value })),
+      }));
+  }, [rawSeries]);
+
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar */}
@@ -384,6 +395,14 @@ export default function SDGExplorer({
                 </div>
               )}
             </div>
+
+            {insightSeries.length > 0 && (
+              <AIInsightPanel
+                title={`${currentGoal.title}${selectedCountry ? ` — ${countries.find((c) => c.iso3 === selectedCountry)?.name ?? selectedCountry}` : " — Africa average"}`}
+                metric="SDG progress"
+                series={insightSeries}
+              />
+            )}
           </>
         )}
       </main>

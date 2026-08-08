@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   uploadMicrodata,
@@ -183,6 +184,23 @@ export default function MicrodataPage() {
         Upload household survey microdata (EICV, UNPS, DHS, LSMS, MICS, Afrobarometer, and more)
         and run poverty, inequality, and spatial analysis directly from your dashboard.
       </p>
+
+      <section className="bg-gradient-to-br from-emerald-50 to-white rounded-xl p-6 border border-emerald-100 mb-10 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-aic-green text-white text-sm font-bold shrink-0">
+            AI
+          </span>
+          <div>
+            <h2 className="font-semibold text-aic-dark">Ask AIC Intelligence</h2>
+            <p className="text-sm text-aic-muted">
+              Describe what you want to find in plain language and get an explainable analysis plan for your dataset.
+            </p>
+          </div>
+        </div>
+        <Link href="/microdata/intelligence" className="btn-primary !py-2 !px-4 text-sm shrink-0">
+          Ask a question
+        </Link>
+      </section>
 
       <section className="mb-10">
         <h2 className="text-xl font-semibold text-aic-dark mb-1">Interactive dashboard</h2>

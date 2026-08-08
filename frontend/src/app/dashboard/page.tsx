@@ -5,15 +5,16 @@ import {
   fetchMacroData,
   fetchCountries,
   fetchIndicators,
-  fetchMacroInterpretation,
   type MacroDataResponse,
   type MacroDataPoint,
   type CountryEntry,
   type IndicatorEntry,
+  type InsightSeriesInput,
 } from "@/lib/api";
 import MultiMacroChart, { type ChartSeries } from "@/components/MultiMacroChart";
 import PageHeader from "@/components/ui/PageHeader";
 import Spinner from "@/components/ui/Spinner";
+import AIInsightPanel from "@/components/insights/AIInsightPanel";
 
 const COLORS = ["#0f766e", "#b45309", "#1d4ed8", "#be123c", "#4d7c0f", "#7c3aed", "#c2410c", "#0369a1"];
 
@@ -25,8 +26,6 @@ export default function Dashboard() {
   const [data, setData] = useState<MacroDataResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [interpretation, setInterpretation] = useState<string | null>(null);
-  const [interpreting, setInterpreting] = useState(false);
 
   useEffect(() => {
     fetchCountries().then(setCountries).catch(() => setCountries([]));
@@ -36,7 +35,6 @@ export default function Dashboard() {
   const loadMacroData = useCallback(() => {
     setLoading(true);
     setError(null);
-    setInterpretation(null);
     fetchMacroData(country)
       .then(setData)
       .catch(() => setError("Macroeconomic data is temporarily unavailable. Please try again."))
@@ -49,7 +47,6 @@ export default function Dashboard() {
 
   function toggleIndicator(code: string) {
     setSelectedCodes((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
-    setInterpretation(null);
   }
 
   const grouped = useMemo(() => {
@@ -80,18 +77,15 @@ export default function Dashboard() {
 
   const countryName = data?.country_name ?? country;
 
-  async function handleInterpret() {
-    if (selectedCodes.length === 0) return;
-    setInterpreting(true);
-    try {
-      const result = await fetchMacroInterpretation(country, selectedCodes);
-      setInterpretation(result.narrative);
-    } catch {
-      setInterpretation("Could not generate an interpretation right now. Try again after the data has synced.");
-    } finally {
-      setInterpreting(false);
-    }
-  }
+  const insightSeries: InsightSeriesInput[] = useMemo(() => {
+    return series
+      .filter((s) => s.data.length > 0)
+      .map((s) => ({
+        label: s.label,
+        country: countryName,
+        points: s.data.map((d) => ({ year: d.year, value: d.value })),
+      }));
+  }, [series, countryName]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10">
@@ -164,25 +158,9 @@ export default function Dashboard() {
           <p className="text-sm text-aic-muted mb-6">{selectedCodes.length} indicator(s) plotted together</p>
           <MultiMacroChart series={series} />
 
-          <div className="mt-8 border-t border-slate-100 pt-6">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-aic-dark">AI Interpretation</h3>
-              <button
-                onClick={handleInterpret}
-                disabled={interpreting || selectedCodes.length === 0}
-                className="btn-primary !py-1.5 !px-4 text-sm"
-              >
-                {interpreting ? "Analyzing..." : "Generate Interpretation"}
-              </button>
-            </div>
-            {interpretation ? (
-              <p className="text-sm text-slate-700 leading-relaxed">{interpretation}</p>
-            ) : (
-              <p className="text-sm text-aic-muted">
-                Click Generate Interpretation for an automated, data-driven narrative analysis of the selected indicators.
-              </p>
-            )}
-          </div>
+          {insightSeries.length > 0 && (
+            <AIInsightPanel title={`${countryName} macro indicators`} metric="macro" series={insightSeries} />
+          )}
         </div>
       )}
     </div>
