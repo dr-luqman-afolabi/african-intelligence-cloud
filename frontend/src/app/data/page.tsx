@@ -14,6 +14,15 @@ export const metadata: Metadata = {
 /** Group sources into categories a reader recognises, rather than by internal
  *  registry tier. Matching is on the source id/name because the registry has no
  *  category field — kept here so the grouping is visible and correctable. */
+// License category codes from the connector registry (backend/app/models/data_source.py):
+// A = Open API, B = Open downloadable, C = Restricted microdata, D = Client-owned.
+const LICENSE_TEXT: Record<string, string> = {
+  A: "Open access — public API",
+  B: "Open access — downloadable",
+  C: "Restricted access — registration required",
+  D: "Data owner's terms apply",
+};
+
 const CATEGORIES: { title: string; blurb: string; match: (c: ConnectorListItem) => boolean }[] = [
   {
     title: "International & multilateral",
@@ -69,6 +78,7 @@ export default async function DataPage() {
           "@type": "Dataset",
           name: c.source_name,
           description: c.source_type,
+          license: LICENSE_TEXT[c.license_category] ?? "Terms vary by source",
           ...(c.data_owner ? { creator: { "@type": "Organization", name: c.data_owner } } : {}),
         })),
       }

@@ -22,6 +22,9 @@ export default async function SurveysPage() {
             "@type": "Dataset",
             name: s.title,
             description: `${s.series} household survey${s.country_iso3 ? ` for ${s.country_iso3}` : ""}.`,
+            license: s.requires_approval
+              ? "Restricted access — registration required"
+              : "Open access — registration not required",
             ...(s.access_url ? { url: s.access_url } : {}),
             ...(s.country_iso3 ? { spatialCoverage: s.country_iso3 } : {}),
           },

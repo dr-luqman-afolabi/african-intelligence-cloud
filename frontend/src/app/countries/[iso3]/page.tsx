@@ -107,6 +107,7 @@ export default async function CountryPage({ params }: { params: Promise<{ iso3: 
     name: `${country.name} economic and development indicators`,
     description: `Macroeconomic and development time series for ${country.name}, harmonized by African Intelligence Cloud.`,
     url: `https://aic.hyrin.org/countries/${country.iso3.toLowerCase()}`,
+    license: "https://creativecommons.org/licenses/by/4.0/",
     spatialCoverage: { "@type": "Place", name: country.name },
     ...(yearsCovered ? { temporalCoverage: `${yearsCovered.from}/${yearsCovered.to}` } : {}),
     variableMeasured: indicators.slice(0, 30).map((i) => i.name),
